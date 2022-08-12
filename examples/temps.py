@@ -50,28 +50,32 @@ def function():
     class Annie():
         pass
 
-    class Josh:
+    class Outer:
+        class Josh:
 
-        def get_nothing(self) -> str:
-            return "YOu Just go None"
+            def get_nothing(self) -> str:
+                return "YOu Just go None"
 
-        def __str__(self):
-            return "Josh's Name"
+            def __str__(self):
+                return "Josh's Name"
 
-        def __init__(self):
-            pass
+            def __init__(self):
+                x = "Hi from init"
+                pass
 
-        pass  # This is the return
+            pass  # This is the return
+
+    Josh = Outer.Josh
 
     josh = Josh()
 
     josh.get_nothing()
 
-    python_code_analyzer.record_dict_for_trace_call_result_next({"x VALUE 1 ON for": x})
-    python_code_analyzer.record_dict_for_trace_call_result_next({"x VALUE 2 ON for": x})
+    python_code_analyzer.record_dict_for_interpretable_next({"x VALUE 1 ON for": x})
+    python_code_analyzer.record_dict_for_interpretable_next({"x VALUE 2 ON for": x})
 
-    python_code_analyzer.record_dict_for_trace_call_result_previous({"FFFF 2 ON x": i})
-    python_code_analyzer.record_dict_for_trace_call_result_previous({"FFFF 3 ON x": i})
+    python_code_analyzer.record_dict_for_interpretable_previous({"FFFF 1 ON x": i})
+    python_code_analyzer.record_dict_for_interpretable_previous({"FFFF 2 ON x": i})
 
     # The belwo does not include the additional lines that complete the statement
     testing = (
@@ -80,20 +84,20 @@ def function():
 
     for i in range(1):
         print(i)
-        python_code_analyzer.record_dict_for_trace_call_result_next({"TESTING ON x += 1": 1})
+        python_code_analyzer.record_dict_for_interpretable_next({"TESTING ON x += 1": 1})
 
-        python_code_analyzer.record_dict_for_trace_call_result_previous({"i VALUE 1 ON for": i})
-        python_code_analyzer.record_dict_for_trace_call_result_previous({"i VALUE 2 ON for": i})
+        python_code_analyzer.record_dict_for_interpretable_previous({"i VALUE 1 ON for": i})
+        python_code_analyzer.record_dict_for_interpretable_previous({"i VALUE 2 ON for": i})
 
         x += 1
 
         x
         print()
 
-        python_code_analyzer.record_dict_for_trace_call_result_next({"IM ON TOP": "YO"})
+        python_code_analyzer.record_dict_for_interpretable_next({"IM ON TOP": "YO"})
         z = add(i, x)
 
-        python_code_analyzer.record_dict_for_trace_call_result_previous({"z VALUE": z})
+        python_code_analyzer.record_dict_for_interpretable_previous({"z VALUE": z})
 
         print(z)
 
@@ -128,7 +132,7 @@ def function():
     dude = 233333
 
     bob = Bob()
-    python_code_analyzer.record_dict_for_trace_call_result_previous({"HELLO": "JOSEPH"})
+    python_code_analyzer.record_dict_for_interpretable_previous({"HELLO": "JOSEPH"})
 
     last_line = 2323
 
@@ -139,9 +143,9 @@ def function():
         def ret_inner():
             _inner_2 = "_inner_2"
 
-            pass
+            return _inner_2
 
-        return
+        return ret_inner()
 
     ret()
 

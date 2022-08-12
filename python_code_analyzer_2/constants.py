@@ -21,47 +21,83 @@ Tags:
 Reference:
 
 """
+from __future__ import annotations
 
-AND = "and"
-AS = "as"
-ASSERT = "assert"
-BREAK = "break"
-CASE = "case"
-CLASS = "class"
-CONTINUE = "continue"
-DEF = "def"
-DEL = "del"
-ELIF = "elif"
-ELSE = "else"
-EXCEPT = "except"
-FALSE = "False"
-FINALLY = "finally"
-FOR = "for"
-FROM = "from"
-GLOBAL = "global"
-IF = "if"
-IMPORT = "import"
-IN = "in"
-IS = "is"
-LAMBDA = "lambda"
-MATCH = "match"
-NONE = "None"
-NONLOCAL = "nonlocal"
-NOT = "not"
-OR = "or"
-PASS = "pass"
-RAISE = "raise"
-RETURN = "return"
-TRUE = "True"
-TRY = "try"
-WHILE = "while"
-WITH = "with"
-YIELD = "yield"
+from enum import Enum
 
-######
 
-RETURN = 'return'
-CALL = 'call'
-LINE = 'line'
-EXCEPTION = 'exception'
-OPCODE = 'opcode'
+class EnumSimple(Enum):
+
+    # def __eq__(self, other):
+    #     """
+    #     Changing the default behavior because
+    #     """
+    #     return other == self.value
+
+    @staticmethod
+    def get_enum(value) -> EnumSimple:
+        """
+        Here for convenience because you might not know...
+        """
+        return EnumSimple(value)
+
+
+class InterpretableType(EnumSimple):
+    pass
+
+class Keyword(InterpretableType):
+    AND = "and"
+    AS = "as"
+    ASSERT = "assert"
+    BREAK = "break"
+    CASE = "case"
+    CLASS = "class"
+    CONTINUE = "continue"
+    DEF = "def"
+    DEL = "del"
+    ELIF = "elif"
+    ELSE = "else"
+    EXCEPT = "except"
+    FALSE = "False"
+    FINALLY = "finally"
+    FOR = "for"
+    FROM = "from"
+    GLOBAL = "global"
+    IF = "if"
+    IMPORT = "import"
+    IN = "in"
+    IS = "is"
+    LAMBDA = "lambda"
+    MATCH = "match"
+    NONE = "None"
+    NONLOCAL = "nonlocal"
+    NOT = "not"
+    OR = "or"
+    PASS = "pass"
+    RAISE = "raise"
+    RETURN = "return"
+    TRUE = "True"
+    TRY = "try"
+    WHILE = "while"
+    WITH = "with"
+    YIELD = "yield"
+
+
+class Event(InterpretableType):
+    """
+    Notes:
+        Add more events when the Python version updates
+
+    Reference:
+        sys.settrace(tracefunc)
+            Notes:
+                "Trace functions should have three arguments: frame, event, and arg. frame is the current stack frame.
+                event is a string: 'call', 'line', 'return', 'exception' or 'opcode'. arg depends on the event type."
+            Reference:
+                https://docs.python.org/3/library/sys.html#sys.settrace
+    """
+    RETURN = 'return'  # tracefunc event
+    CALL = 'call'  # tracefunc event
+    LINE = 'line'  # tracefunc event
+    EXCEPTION = 'exception'  # tracefunc event
+    OPCODE = 'opcode'  # tracefunc event

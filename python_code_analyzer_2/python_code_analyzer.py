@@ -13,6 +13,18 @@ Description:
 Notes:
     Abusing settrace
 
+    Design:
+
+
+
+    Note that The order of TraceCallResult objects is
+        Line
+        Call
+        Actual code execution of what was for the Call Event
+
+
+
+
 IMPORTANT NOTES:
 
 Explanation:
@@ -29,13 +41,14 @@ Reference:
             https://stackoverflow.com/questions/1692866/what-cool-hacks-can-be-done-using-sys-settrace
 """
 import sys
+from enum import Enum, auto
 from functools import wraps
 from typing import Union, List, Dict, Any, Callable, Type
 
 from python_code_analyzer_2 import constants
 from python_code_analyzer_2.interpretable import Interpretable
-from python_code_analyzer_2.trace_call_result import TraceCallResult
 from python_code_analyzer_2.scope import Scope
+from python_code_analyzer_2.trace_call_result import TraceCallResult
 
 old_trace = sys.gettrace()
 
@@ -59,7 +72,6 @@ Notes (format later):
 from types import TracebackType, FrameType
 
 
-
 class _Special:
     __slots__ = ()
     pass
@@ -78,6 +90,9 @@ class _SpecialStop(_Special):
 
 
 _SPECIAL_STOP = _SpecialStop()
+
+
+
 
 
 def _decorator_ignore_trace_call_result(callable_given: Union[Callable, None] = None) -> Callable:
@@ -131,6 +146,14 @@ class _List(list):
 
 
 class PythonCodeAnalyzer:
+    class Command(Enum):
+        """
+        Special commands that are only by the parent class to do specific actions
+
+        """
+        STOP = auto()
+        ADD_DICT_FOR_INTERPRETABLE_NEXT = auto()
+        ADD_DICT_FOR_INTERPRETABLE_PREVIOUS = auto()
 
     def __init__(self):
 
@@ -145,7 +168,7 @@ class PythonCodeAnalyzer:
 
         self._special_stop: _Special = _SPECIAL_STOP
 
-        self.__scope_level_self: int = 0
+        self.__scope_level_self: int = 0  # USED TO DETERMINE IF STILL INSIDE OF SELF DOING SOMECALL NOT FROM THIS OBJECT
 
         self._trace_call_result_possible_on_board: Union[TraceCallResult, None] = None
 
@@ -159,19 +182,16 @@ class PythonCodeAnalyzer:
         """
         self._dict_k_object_v_trace_call_result_class: Dict[Type[object], TraceCallResult] = {}  # TODO NOT USED
 
-        # self._trace_call_result_possible_on_board_event_line_for_class: Union[TraceCallResult, None] = None
-        #
-        # self._trace_call_result_possible_on_board_event_call_for_class: Union[TraceCallResult, None] = None
-
         ##
-
-        self._scope_level_class = 0
 
         ##
 
         self.bool_record_dict_k_variable_v_value_for_trace_call_result_next: bool = False
 
         self.list_dict_k_variable_v_value_for_trace_call_result_next: List[Dict[str, Any]] = []
+
+
+        self.list_dict_k_variable_v_value_for_trace_call_result_pervious: List[Dict[str, Any]] = []
 
         ##
         """
@@ -190,6 +210,11 @@ class PythonCodeAnalyzer:
         """
         self._trace_function_old: Union[TracebackType, None] = None
 
+        ####################
+
+        self._list_command: List[PythonCodeAnalyzer.Command] = []
+
+
         ################################################################################
 
         # List of all the trace_call_results
@@ -203,20 +228,26 @@ class PythonCodeAnalyzer:
 
         ##
 
-        self.list_stack_scope_container: List[Scope] = []
+        self.list_stack_scope: List[Scope] = []
+
+        #####
 
         scope_container_initial: Scope = Scope()
 
-        self.list_stack_scope_container.append(scope_container_initial)
+        self.list_stack_scope.append(scope_container_initial)
 
-        ##
+        ##########
+        """
+        INTERPRETABLE CLASS VARIABLES  
+        """
+        self._trace_call_result_possible_on_board_event_line_for_class: Union[TraceCallResult, None] = None
 
+        self._trace_call_result_possible_on_board_event_call_for_class: Union[TraceCallResult, None] = None
 
+        """
+        INTERPRETABLE RETURN VARIABLES
 
-
-
-
-
+        """
 
     def decorator_ignore_callable(self, callable_given: Union[Callable, None] = None) -> Callable:
         """
@@ -292,339 +323,332 @@ class PythonCodeAnalyzer:
 
             _stop_object: Union[_SpecialStop, None] = frame.f_locals.get("____stop____")
 
-            scope_container_top: Scope = self.list_stack_scope_container[-1]
+            scope_current: Scope = self.list_stack_scope[-1]
 
+            interpretable_current: Union[Interpretable, None] = (
+                self.list_interpretable[-1] if self.list_interpretable else None
+            )
+
+            trace_call_result_current: Union[TraceCallResult, None] = (
+                self.list_trace_call_result[-1] if self.list_trace_call_result else None
+            )
 
             print("-" * 10)
-            print(frame)
-            print(frame.f_locals)
-
-            trace_call_result_possible_temp: TraceCallResult = TraceCallResult(
-                frame,
-                event,
-                arg,
-                self._get_scope_level_by_application()
-            )
-            print(event)
-            print(f"LINE {frame.f_lineno} {trace_call_result_possible_temp.code_line} ")
-
-            callable_name = frame.f_code.co_name
-
-            if event == constants.RETURN:
-                """
-                A function (or other code block) is about to return. The local trace function is called; arg is the 
-                value that will be returned, or None if the event is caused by an exception being raised. 
-                The trace function’s return value is ignored.
-                
-                """
-
-                ##########
-
-            elif event == constants.CALL:
-                """
-                A function is called (or some other code block entered). The global trace function is called; 
-                arg is None; the return value specifies the local trace function.
-                
-                """
-                # data = filename_raw.relative_to(frame.f_lineno, frame.f_code.co_name, depth)
-
-                # TODO REMOVE THE BELOW
-                # data = (filename, callable_line_number, callable_name, self._get_scope_level_by_application())
-
-                # self._list_frame.append(data)
-
-                if self_from_frame_locals is self:
-
-                    """
-                    When any of the methods of this object is called within code that is being analyzed, an e
-                    vent == LINE is called as a an argument to this method which corresponds to one of this object's 
-                    methods. Due to the any of this object's methods being ignored by default when code is being 
-                    analyzed, the call that had event == LINE should not be seen by the user because it serves no
-                    purpose to the actual code being analyzed. 
-
-                    Basically, remove the trace_call_result that indicates the existence of any of this object's 
-                    methods being called because it's unrelated to the code that this object should be analyzing.
-                    """
-
-                    """
-                    The popped trace_call_result should have an event of LINE and is the call to a method from this object
-                    whose trace_call_result has nothing to do with the analysis of what this object should be analyzing.
-                    
-                    Notes:
-                        If in code being analyzed calls a method of this object
-                            1.  The callback will be called which will add the the method call as an trace_call_result
-                            2.  The next callback will be the same as the 1. but the event will be call, BUT self will 
-                                be in f_locals meaning the trace_call_result will not be made.
-                            3.  Since the method call in the code is unrelated the analysis of the code, the most
-                                recently added trace_call_result will be dropped.                        
-                        
-                    """
-                    if self.list_trace_call_result and _stop_object is None and self.__scope_level_self == 0:
-                        trace_call_result_possible = self.list_trace_call_result.pop()
-                        print("POPPING 1", trace_call_result_possible, event)
-
-            elif event == constants.LINE:
-                """
-                The interpreter is about to execute a new line of code or re-execute the condition of a loop. 
-                The local trace function is called; arg is None; the return value specifies the new local 
-                trace function. See Objects/lnotab_notes.txt for a detailed explanation of how this works.
-                Per-line events may be disabled for a frame by setting f_trace_lines to False on that frame.
-                
-                """
-                pass
-
-            elif event == constants.EXCEPTION:
-                """
-                An exception has occurred. The local trace function is called; arg is a 
-                tuple (exception, value, traceback); the return value specifies the new local trace function.
-                """
-                pass
-
-            elif event == constants.OPCODE:
-                """
-                The interpreter is about to execute a new opcode (see dis for opcode details). The local trace 
-                function is called; arg is None; the return value specifies the new local trace function. 
-                Per-opcode events are not emitted by default: they must be explicitly requested by setting 
-                f_trace_opcodes to True on the frame.
-                """
-                pass
-
-            trace_call_result_possible: Union[TraceCallResult, None] = None
-
-            # # If the frame and event (possible trace_call_result) should be recorded
-            # if self._trace_what_has_been_called is True:
-
-            # If the frame's local's self is not this object
+            print("frame:", frame)
+            print("frame.locals:", frame.f_locals)
+            print("event:", event)
+            print("self:", self_from_frame_locals)
+            # print("trace_call_result_current", trace_call_result_current)
+            """
+            If not self related (Analyzing the code)
+            
+            Notes:
+                Everything inside the if statement relates to the code be analyzed
+            
+            """
             if self_from_frame_locals is not self and self.__scope_level_self == 0:
 
-                # """
-                # The below condition deals with determining if the previous trace_call_result is unrelated to this
-                # current traceback call's handling of a frame that involves self.
-                #
-                # Basically, if self._trace_call_result_possible_on_board is an trace_call_result, and the the current
-                # frame/event/arg has a relationship to this object (self) then
-                # exhaust self.list_dict_k_variable_v_value_for_trace_call_result_next to
-                # self._trace_call_result_possible_on_board because it's an trace_call_result that this application
-                # considers to be an proper trace_call_result
-                # """
-                # if self._trace_call_result_possible_on_board is not None:
-                #     self._trace_call_result_possible_on_board.exhaust_list_dict_k_variable_v_value(
-                #         self.list_dict_k_variable_v_value_for_trace_call_result_next
-                #     )
-                #
-                #     self._trace_call_result_possible_on_board = None
-                #
-                # """
-                # This trace_call_result is considered "possible" because code that uses this object will be
-                # shown to this traceback function's call which has nothing to do with the code being analyzed.
-                #
-                # Basically, if code that is being analyzed has any calls to this object's methods, then that
-                # trace_call_result created is analyzing this object which is wrong which is why the variable is
-                # called trace_call_result_possible
-                # """
+                scope_depth_index = len(self.list_stack_scope)
 
+                ####################
+                # SCOPE STUFF
+                ####################
+                if event == constants.Event.CALL.value:
+                    trace_call_result_top_level_corrected = 1  # THIS SHOULD BE 1 BECAUSE A SCOPE IS ALWAYS 1 LEVEL DEEPER
 
+                    # Recall that trace_call_result_current is the previous interpretable
+                    if trace_call_result_current is not None:
+                        trace_call_result_top_level_corrected += trace_call_result_current.get_indent_level_corrected()
 
+                        print("INSIDE YO, STARTING LEVEL IS", trace_call_result_top_level_corrected, "ADDED WAS",
+                              trace_call_result_current.get_indent_level_corrected())
 
-                trace_call_result_possible = TraceCallResult(
+                    from joseph_library.print import print_blue, print_magenta
+                    print_blue(f"SCOPE DEPTH BY CONDITIONAL: {scope_depth_index}")
+
+                    print_magenta(f"LEVEL CORRECTED {trace_call_result_top_level_corrected}")
+
+                    scope_new: Scope = Scope(
+                        trace_call_result_top_level_corrected,
+                        scope_depth_index,
+                        scope_current
+                    )
+
+                    print_magenta("NEW SCOPE")
+                    print_magenta("trace_call_result_top_level_corrected", trace_call_result_top_level_corrected)
+
+                    self.list_stack_scope.append(scope_new)
+
+                elif event == constants.Event.RETURN.value:
+                    # May need to add stuff here eventually if needed
+                    pass
+
+                ####################
+                # TraceCallResult
+                ####################
+
+                trace_call_result_new = TraceCallResult(
                     frame,
                     event,
                     arg,
                     self._get_scope_level_by_application(),
                 )
 
+                ####################
+                # Interpretable RETURN
+                ####################
+                if event == constants.Event.RETURN.value:
+                    """ 
+                    Notes:
+                        Order:
+                            1. Line Relative to the inner scope
+                            2. Return Relative to the inner scope
+                            
+                        Add trace_call_result_new to interpretable_current (Adding to interpretable_current is default
+                        behavior)
+                    """
+                    interpretable_current.set_interpretable_type(constants.Event.RETURN)
 
+                    from joseph_library.print import print_blue, print_magenta
+                    print_blue("RETURN HIT")
 
-                """
-                The below condition pops the trace_call_result at the top and steals its dict_k_variable_v_value
-                and adds it to the recently created trace_call_result because the popped trace_call_result is the same at
-                the recently created trace_call_result, but the recently created trace_call_result has it's event == RETURN
-                
-                Notes:
-                    You want to have the trace_call_result with event == RETURN because this function's argument "arg" 
-                    can be the return result of this callable. 
-                """
-                if event == constants.RETURN:
-                    trace_call_result_event_line_before_event_return = self.list_trace_call_result.pop()
+                    self.list_stack_scope.pop()  ## FIXME NOT YET
 
-                    print("POPPING 2", trace_call_result_event_line_before_event_return)
+                ####################
+                # Interpretable CLASS
+                ####################
+                elif trace_call_result_new.get_python_key_word() == constants.Keyword.CLASS:
+                    """
+                    Notes:
+                        Order:
+                            1. Line Relative to the outer scope
+                            2. Call Relative to the inner scope
+                            3. Line Relative to the inner scope
+                    
+                        For a correct class you need:
+                            _trace_call_result_possible_on_board_event_line_for_class
+                            _trace_call_result_possible_on_board_event_call_for_class
+                    """
 
-                    dict_k_variable_v_value_temp = trace_call_result_event_line_before_event_return.get_dict_k_variable_v_value()
-
-                    trace_call_result_possible.update_dict_k_variable_v_value(dict_k_variable_v_value_temp)
-
-                ##
-
-                if trace_call_result_possible.get_python_key_word() == constants.CLASS:
-
-                    if (trace_call_result_possible.get_event() == constants.LINE and
+                    # First trace_call_result
+                    if (trace_call_result_new.get_event() == constants.Event.LINE and
                             self._trace_call_result_possible_on_board_event_line_for_class is None):
 
-                        self._trace_call_result_possible_on_board_event_line_for_class = trace_call_result_possible
+                        # Replace interpretable_current with a new one
+                        interpretable_current = Interpretable(scope_current, constants.Keyword.CLASS)
+                        self.list_interpretable.append(interpretable_current)
 
-                    elif (trace_call_result_possible.get_event() == constants.CALL and
+                        self._trace_call_result_possible_on_board_event_line_for_class = trace_call_result_new
+                        print("CLASS ASS 1")
+
+                    # Second trace_call_result
+                    elif (trace_call_result_new.get_event() == constants.Event.CALL and
                           self._trace_call_result_possible_on_board_event_call_for_class is None):
 
-                        self._trace_call_result_possible_on_board_event_call_for_class = trace_call_result_possible
+                        self._trace_call_result_possible_on_board_event_call_for_class = trace_call_result_new
+                        print("CLASS ASS 2")
 
+                    # Third trace_call_result
                     elif (self._trace_call_result_possible_on_board_event_line_for_class is not None and
                           self._trace_call_result_possible_on_board_event_call_for_class is not None):
 
-                        # trace_call_result_event_line_for_class = self.list_trace_call_result.pop()  # Has access to local variables when defined
-                        # trace_call_result_event_call_for_class = self.list_trace_call_result.pop()  # Same as previous frame but the event is "call"
-
-
-                        # scope_container_top.pop() # NOT A DOUBLE POP
-                        # scope_container_top.pop()
-
-
-                        # Because the most recent trace_call_result has an event of "call"
-                        # trace_call_result_possible.get_scope_level_container_by_application().scope_level = self._get_scope_level_by_application() - 1
-
-                        # print("POPPING 3", trace_call_result_event_line_for_class, trace_call_result_event_call_for_class)
-
-                        self._scope_level_class += 1
+                        print("CLASS ASS 3")
 
                         self._trace_call_result_possible_on_board_event_line_for_class = None
                         self._trace_call_result_possible_on_board_event_call_for_class = None
 
+                    # IF THE ASSUMPTION FOR CREATING A INTERPRETABLE CLASS WAS INCORRECT, THIS IS THE FALL BACK
                     else:
+
+                        # Pop the TODO NO POPPING
+                        # scope_current.pop_interpretable()
+                        # self.list_interpretable.pop()
+
+                        if self._trace_call_result_possible_on_board_event_line_for_class is not None:
+                            interpretable_temp = Interpretable(scope_current)
+                            self.list_interpretable.append(interpretable_temp)
+
+                            interpretable_temp.add_trace_call_result(
+                                self._trace_call_result_possible_on_board_event_line_for_class
+                            )
+
+                        if self._trace_call_result_possible_on_board_event_call_for_class is not None:
+                            interpretable_temp = Interpretable(scope_current)
+                            self.list_interpretable.append(interpretable_temp)
+
+                            interpretable_temp.add_trace_call_result(
+                                self._trace_call_result_possible_on_board_event_call_for_class
+                            )
+
                         self._trace_call_result_possible_on_board_event_line_for_class = None
                         self._trace_call_result_possible_on_board_event_call_for_class = None
 
+                ####################
+                # Interpretable CALL
+                ####################
+                elif event == constants.Event.CALL.value:  # Notice that the value of the Enum is compared
+                    """
+                    Notes:
+                        Order:
+                            1. Line relative to outer scope
+                            2. Call relative to inner scope
+                    
+                    """
 
-                #########
-                # UGGG
-                #########
+                    # TODO: THIS IS TO CORRECT THE CLASS CALLING WHEN MAKIGN A CLASS
+                    # if trace_call_result_new.get_python_key_word() == constants.CLASS:
+                    #     scope_depth_index += -1
 
-                if event == constants.CALL:
+                    #############
+                    # from joseph_library.print import print_blue, print_magenta
+                    # print_blue(f"SCOPE DEPTH BY CONDITIONAL: {scope_depth_index}")
+                    # trace_call_result_top_level_corrected = 1  # THIS SHOULD BE 1 BECAUSE A SCOPE IS ALWAYS 1 LEVEL DEEPER
+                    #
+                    #
+                    # # Recall that trace_call_result_current is the previous interpretable
+                    # if trace_call_result_current is not None:
+                    #     trace_call_result_top_level_corrected += trace_call_result_current.get_indent_level_corrected()
+                    #
+                    #     print("INSIDE YO, STARTING LEVEL IS", trace_call_result_top_level_corrected, "ADDED WAS", trace_call_result_current.get_indent_level_corrected())
+                    #
+                    # print_magenta(f"LEVEL CORRECTED {trace_call_result_top_level_corrected}")
+                    # scope_new: Scope = Scope(
+                    #     trace_call_result_top_level_corrected,
+                    #     scope_depth_index,
+                    #     scope_current
+                    # )
+                    #
+                    # print_magenta("NEW SCOPE")
+                    # print_magenta("trace_call_result_top_level_corrected", trace_call_result_top_level_corrected)
+                    #
+                    # self.list_stack_scope.append(scope_new)
 
-                    # if self_from_frame_locals is self: // TODO DO NOT USE THIS HERE
-                    #     self.__scope_level_self += 1
+                    #############
 
-                    if self.__scope_level_self <= 0:
+                    #####
+                    # SETTING THE INTERPRETABLE'S TYPE
+                    interpretable_current = Interpretable(scope_current, constants.Event.CALL)
+                    self.list_interpretable.append(interpretable_current)
 
-                        scope_depth_index = len(self.list_stack_scope_container)
+                    # trace_call_result_top = scope_current.get_interpretable_top()  # FIXME DELETE ME
+                    #
+                    # scope_level_by_analyzer = len(self.list_stack_scope)
+                    #
+                    # scope_new = Scope(
+                    #     trace_call_result_current.get_indent_level_by_code_execution(),
+                    #     scope_level_by_analyzer,
+                    #     scope_current
+                    # )
+                    #
+                    # self.list_stack_scope.append(scope_new)
 
-                        # TODO: THIS IS TO CORRECT THE CLASS CALLING WHEN MAKIGN A CLASS
-                        # if trace_call_result_possible.get_python_key_word() == constants.CLASS:
-                        #     scope_depth_index += -1
+                ####################
+                # Interpretable (DEFAULT)
+                ####################
+                else:
+                    """
+                    Notes:
+                        Order:
+                            1. Line
+                    """
+                    # Replace interpretable_current with a new one
+                    interpretable_current = Interpretable(scope_current, constants.Event.LINE)
+                    self.list_interpretable.append(interpretable_current)
 
-                        from joseph_library.print import print_blue, print_magenta
-                        print_blue(f"SCOPE DEPTH: {scope_depth_index}")
+                #####
+                # EXHAUSTING TO INTERPRETABLE NEXT
 
-                        trace_call_result_top_level_corrected = 0
-
-                        if self.list_trace_call_result:
-                            trace_call_result_top_level_corrected = self.list_trace_call_result[-1].get_scope_level_corrected()
-
-
-                        scope_container_new: Scope = Scope(
-                            trace_call_result_top_level_corrected,
-                            scope_depth_index,
-                            scope_container_top
-                        )
-                        print_magenta("NEW SCOPE")
-                        self.list_stack_scope_container.append(scope_container_new)
-
-                scope_container_top: Scope = self.list_stack_scope_container[-1]  # REASSIGN
-
-                ##########
-                # ASSIGNING THE PREVIOUS INTERPRETABLES TO THE possible TraceCallResult
-                ##########
-
-                # TODO FIX TEH POPPING PROBLEM
-                trace_call_result_from_scope_container_top: Union[TraceCallResult, None] = scope_container_top.get_trace_call_result_top()
-
-                trace_call_result_possible.set_trace_call_result_previous_by_scope(trace_call_result_from_scope_container_top)
-
-                ##
-
-                trace_call_result_previous_direct = None
-
-                if self.list_trace_call_result:
-                    trace_call_result_previous_direct = self.list_trace_call_result[-1]
-
-                trace_call_result_possible.set_trace_call_result_previous_by_direct(trace_call_result_previous_direct)
-
-
-                ##
-
-                self._trace_call_result_possible_on_board = trace_call_result_possible
-
-                self.list_trace_call_result.append(trace_call_result_possible)  # THIS IS THE MAIN ADD
-
-                ##
-
-                scope_container_top.add_trace_call_result(trace_call_result_possible)
-
+                interpretable_current.update_dict_k_variable_v_value_through_list(
+                    self.list_dict_k_variable_v_value_for_trace_call_result_next
+                )
 
                 #####
 
-                if event == constants.RETURN:
-                    if self._scope_level_class > 0:
-                        # This will remove the return when a class is being defined
-                        trace_call_result_event_line_for_class = self.list_trace_call_result.pop()
+                ############
+                # PRIMARY ZONE
+                ############
 
-                        print("POPPING 4", trace_call_result_event_line_for_class)
+                interpretable_current.add_trace_call_result(trace_call_result_new)
 
-                        self._scope_level_class -= 1
+                # CORRECTING THE INDENT LEVEL FOR EVENTS THAT ARE CALLS
+                if trace_call_result_current is not None and event == constants.Event.CALL.value:
+                    indent_level_offset = (
+                            trace_call_result_current.get_indent_level_relative() -
+                            trace_call_result_new.get_indent_level_relative()
+                    )
 
-            # If the current call to this function was from this object
+                    trace_call_result_new.set_indent_level_offset(indent_level_offset)
+
+                print(f"LINE {frame.f_lineno} {trace_call_result_new.code_line} ")
+                print(interpretable_current.interpretable_type)
+
+                from joseph_library.print import print_green
+                print_green(f"SIZE {interpretable_current.list_trace_call_result}")
+
+                ###### ENDING STUFF FOR INTERPRETABLES
+
+                # Need to add the new trace
+                self.list_trace_call_result.append(trace_call_result_new)
+
             elif self_from_frame_locals is self:
-                self._trace_call_result_possible_on_board = None
+
+                _comamnd: Union[PythonCodeAnalyzer.Command, None] = self._list_command.pop() if self._list_command else None
+
+                if _comamnd == PythonCodeAnalyzer.Command.ADD_DICT_FOR_INTERPRETABLE_NEXT:
+
+                    self.list_interpretable.pop()
+
+                    _interpretable_popped = scope_current.pop_interpretable()
+
+                    _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()
+
+                    self.list_dict_k_variable_v_value_for_trace_call_result_next.append(_dict_k_variable_v_value)
+
+                elif _comamnd == PythonCodeAnalyzer.Command.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
+
+                    self.list_interpretable.pop()
+
+                    # Event Line Interpretable that is record_dict_for_interpretable_previous()
+                    # May have a dict_k_variable_v_value that is from record_dict_for_interpretable_next()
+                    _interpretable_popped = scope_current.pop_interpretable()
+
+                    _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()
+
+                    self.list_dict_k_variable_v_value_for_trace_call_result_next.append(_dict_k_variable_v_value)
+
+                    # Actual previous interpretable
+                    _interpretable_top = scope_current.get_interpretable_top()
+
+                    _dict_k_variable_v_value = _interpretable_top.get_dict_k_variable_v_value()
+
+                    _interpretable_top.update_dict_k_variable_v_value_through_list(
+                        self.list_dict_k_variable_v_value_for_trace_call_result_pervious
+                    )
+
 
             ##########
             # ENDING STUFF
             ##########
 
-            if event == constants.RETURN:
-                print("LAST RETURN", self.__scope_level_self)
-                # self._scope_level_by_application -= 1  # TODO REMOVE
+            if event == constants.Event.RETURN.value:
 
+                # IF SELF
                 if self_from_frame_locals is self:
                     self.__scope_level_self -= 1
 
-                elif self.__scope_level_self <= 0:
+            elif event == constants.Event.CALL.value:
 
-                    self.list_stack_scope_container.pop()
-
-
-            elif event == constants.CALL:
-
-                # self._scope_level_by_application += 1  # TODO CAN BE MOVED TO THE TOP event == CALL STATEMENT // TODO REMOVE
-
-                ##
-
+                # IF SELF
                 if self_from_frame_locals is self:
                     self.__scope_level_self += 1
-
-                # elif self.__scope_level_self <= 0:
-                #
-                #     scope_depth_index = len(self.list_stack_scope_container)
-                #
-                #     # TODO: THIS IS TO CORRECT THE CLASS CALLING WHEN MAKIGN A CLASS
-                #     if trace_call_result_possible.get_python_key_word() == constants.CLASS:
-                #         scope_depth_index += -1
-                #
-                #     from joseph_library.print import print_blue, print_magenta
-                #     print_blue(f"SCOPE DEPTH: {scope_depth_index}")
-                #
-                #     scope_container_new: Scope = Scope(
-                #         scope_depth_index,
-                #         scope_depth_index,
-                #         scope_container_top
-                #     )
-                #     print_magenta("NEW SCOPE")
-                #     self.list_stack_scope_container.append(scope_container_new)
-
 
             ############
             # ENDING CALLS HERE
             ###########
 
-
+            print(f"SELF COUNTER: {self.__scope_level_self}")
             print("-" * 10)
+
             return trace_function_callback
 
         sys.settrace(trace_function_callback)
@@ -642,42 +666,54 @@ class PythonCodeAnalyzer:
         sys.settrace(self._trace_function_old)
 
     def _get_scope_level_by_application(self) -> int:  # TODO REMOVE
-        return len(self.list_stack_scope_container)
+        return len(self.list_stack_scope)
 
-    def record_dict_for_trace_call_result_next(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
+    def record_dict_for_interpretable_next(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
         """
-        Update update_dict_k_variable_v_value for trace_call_result_current (the next trace_call_result) by appending the
-        dict to a list that will then be exhausted into the next trace_call_result which will be trace_call_result_current
+        Update update_dict_k_variable_v_value for interpretable_current by appending the
+        dict to a list that will then be exhausted into the next trace_call_result
 
         :param dict_k_variable_v_value:
         :return:
         """
-
         self.list_dict_k_variable_v_value_for_trace_call_result_next.append(dict_k_variable_v_value)
 
-    def record_dict_for_trace_call_result_previous(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
+        self._list_command.append(PythonCodeAnalyzer.Command.ADD_DICT_FOR_INTERPRETABLE_NEXT)
+
+
+    def record_dict_for_interpretable_previous(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
         """
         Update update_dict_k_variable_v_value for trace_call_result_previous
 
         :param dict_k_variable_v_value:
         :return:
         """
-        if self.list_stack_scope_container:
-            trace_call_result_previous_by_scope = self.list_stack_scope_container[-1].get_trace_call_result_top()
 
-            if trace_call_result_previous_by_scope is not None:
+        # interpretable_current: Union[Interpretable, None] = (
+        #     self.list_interpretable[-1] if self.list_interpretable else None
+        # )
+        # print("PREEEEE")
+        # if interpretable_current is not None:
+        #     interpretable_current.update_dict_k_variable_v_value(dict_k_variable_v_value)
+        #     print("WHO THE FUCK IS YOU")
+        # print("POSSSSSST")
 
-                from joseph_library.print import print_cyan, print_blue
-                print("FUJA")
-                print_cyan(trace_call_result_previous_by_scope)
-                print_blue(dict_k_variable_v_value)
-                print("FUJB")
-                trace_call_result_previous_by_scope.update_dict_k_variable_v_value(dict_k_variable_v_value)
+        self.list_dict_k_variable_v_value_for_trace_call_result_pervious.append(dict_k_variable_v_value)
 
+        self._list_command.append(PythonCodeAnalyzer.Command.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
 
+        # if self.list_stack_scope:
+        #     trace_call_result_previous_by_scope = self.list_stack_scope[-1].get_interpretable_top()
+        #
+        #     if trace_call_result_previous_by_scope is not None:
+        #         from joseph_library.print import print_cyan, print_blue
+        #         print("FUJA")
+        #         print_cyan(trace_call_result_previous_by_scope)
+        #         print_blue(dict_k_variable_v_value)
+        #         print("FUJB")
+        #         trace_call_result_previous_by_scope.update_dict_k_variable_v_value(dict_k_variable_v_value)
 
-
-        # for trace_call_result in reversed(self.list_trace_call_result):
+        # for trace_call_result in reversed(self.list_interpretable):
         #     print("---- LOOK ----", trace_call_result.get_scope_level_container_by_application(),
         #           self._get_scope_level_by_application())
         #
@@ -690,11 +726,12 @@ class PythonCodeAnalyzer:
         could have been part of a chain of trace_call_results such as from a function call which would lead to
         adding the dict to the return trace_call_result which was part of the chain of trace_call_results.
         """
-        # if self.list_trace_call_result:
-        #     self.list_trace_call_result[-1].update_dict_k_variable_v_value(dict_k_variable_v_value)
+        # if self.list_interpretable:
+        #     self.list_interpretable[-1].update_dict_k_variable_v_value(dict_k_variable_v_value)
 
     def print(self):
         print("#" * 100)
-        for trace_call_result in self.list_trace_call_result:
-            print(trace_call_result)
+        for interpretable in self.list_interpretable:
+            print(interpretable)
+
             print()
