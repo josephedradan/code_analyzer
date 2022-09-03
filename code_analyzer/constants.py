@@ -45,6 +45,7 @@ class EnumSimple(Enum):
 class InterpretableType(EnumSimple):
     pass
 
+
 class Keyword(InterpretableType):
     AND = "and"
     AS = "as"

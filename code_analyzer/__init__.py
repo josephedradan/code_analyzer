@@ -21,6 +21,6 @@ Tags:
 Reference:
 
 """
-from python_code_analyzer_2.python_code_analyzer import PythonCodeAnalyzer
+from code_analyzer.code_analyzer import PythonCodeAnalyzer
 #
 python_code_analyzer = PythonCodeAnalyzer()
