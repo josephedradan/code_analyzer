@@ -59,18 +59,17 @@ from enum import Enum, auto
 from types import TracebackType, FrameType
 from typing import Union, List, Dict, Any
 
-import pandas as pd
-
 import colorama
+import pandas as pd
 from code_analyzer import constants
 from code_analyzer.interpretable import Interpretable
 from code_analyzer.scope import Scope
 from code_analyzer.trace_call_result import TraceCallResult
 
-PRINT_FORMAT = "{:<16}{:<10}{:<10}{:<16}{} {}"
+PRINT_FORMAT = "{:<16}{:<10}{:<14}{:<14}{:<16}{} {}"
 
 
-class PythonCodeAnalyzer:
+class CodeAnalyzer:
     class _Procedure(Enum):
         """
         Special procedures that should only be accessed by this object.
@@ -96,7 +95,7 @@ class PythonCodeAnalyzer:
         Scope depth based on if a Event call had this object as its first parameter (This is used to not trace
         code that this object calls because it's not supposed to 
         """
-        self.__scope_depth_count_self: int = 0
+        self.__depth_scope_count_self: int = 0
 
         # Determine if the code analyzer is _running
         self._running = False
@@ -117,15 +116,15 @@ class PythonCodeAnalyzer:
         ####################
 
         # List of custom commands that this object uses to do specific actions
-        self._list_procedure: List[PythonCodeAnalyzer._Procedure] = []
+        self._list_procedure: List[CodeAnalyzer._Procedure] = []
 
         ####################
 
         """
         Very unique condition when a record_dict_for_line from this object was the previous TraceCallResult object made.
         This variable should be handled when the last line of a callable is a:
-            python_code_analyzer.record_dict_for_line_next(...)
-            python_code_analyzer.record_dict_for_line_previous(...)
+            code_analyzer.record_dict_for_line_next(...)
+            code_analyzer.record_dict_for_line_previous(...)
         This variable handles the TraceCallResult having an Event == Return and is one the of above functions
         """
         self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
@@ -187,7 +186,7 @@ class PythonCodeAnalyzer:
             These variables are related to analysing the code
         """
 
-        self.dict_k_interpretable_v_count_relative: Dict[Interpretable, int] = defaultdict(int)
+        self.dict_k_interpretable_v_list_interpretable: Dict[Interpretable, list] = defaultdict(list)
 
     def start(self):
         """
@@ -210,13 +209,13 @@ class PythonCodeAnalyzer:
 
             nonlocal self
 
-            # filename_raw: str = frame.f_code.co_filename
+            # filename_full: str = frame.f_code.co_filename
 
             # TODO LOOK AT THIS
-            # if filename_raw.startswith('<'):return
+            # if filename_full.startswith('<'):return
 
             # TODO LOOK AT THIS
-            # if not filename_raw.is_relative_to(base_dir := Path()):return
+            # if not filename_full.is_relative_to(base_dir := Path()):return
 
             """
             Getting the self variable to indicate if the trace function has caught a callable from this object.
@@ -225,7 +224,7 @@ class PythonCodeAnalyzer:
             Notes:
                 There can only be one self in the local scope_parent
             """
-            self_from_frame_locals: Union[PythonCodeAnalyzer, None] = frame.f_locals.get("self")
+            self_from_frame_locals: Union[CodeAnalyzer, None] = frame.f_locals.get("self")
 
             # Current Scope
             scope_current: Scope = self.list_stack_scope[-1]
@@ -246,21 +245,21 @@ class PythonCodeAnalyzer:
             # DEBUGGING HEAD START
             ####################A
 
-            print("-" * 10)
-            print("scope_current:", scope_current)
-            print("interpretable_current:", interpretable_current)
-            print("frame:", frame)
-            print("frame.locals:", frame.f_locals)
-            print("event:", event)
-            print("self:", self_from_frame_locals)
-            print("self.__scope_depth_count_self:", self.__scope_depth_count_self)
-            _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
-                _trace_call_result_new.code_line_clean,
-                "|||",
-                _trace_call_result_new.event)
-            )
-            print("trace_call_result_previous:\n\t{}".format(trace_call_result_previous))
+            # print("-" * 10)
+            # print("scope_current:", scope_current)
+            # print("interpretable_current:", interpretable_current)
+            # print("frame:", frame)
+            # print("frame.locals:", frame.f_locals)
+            # print("event:", event)
+            # print("self:", self_from_frame_locals)
+            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            # _trace_call_result_new = TraceCallResult(frame, event, arg, )
+            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+            #     _trace_call_result_new.code_line_strip,
+            #     "|||",
+            #     _trace_call_result_new.event)
+            # )
+            # print("trace_call_result_previous:\n\t{}".format(trace_call_result_previous))
 
             ####################
             # DEBUGGING HEAD END
@@ -273,9 +272,9 @@ class PythonCodeAnalyzer:
                 Everything inside of this if statement relates to the code that should be analyzed
             
             """
-            if self_from_frame_locals is not self and self.__scope_depth_count_self == 0:
+            if self_from_frame_locals is not self and self.__depth_scope_count_self == 0:
 
-                scope_depth_by_analyzer = len(self.list_stack_scope)
+                indent_depth_by_scope = len(self.list_stack_scope)
 
                 ####################
                 # SCOPE STUFF (Creating the scope_parent, etc...)
@@ -283,16 +282,16 @@ class PythonCodeAnalyzer:
                 if event == constants.Event.CALL.value:
 
                     # When a scope_parent is created, the initial level should be 1
-                    scope_depth_start = 1
+                    indent_depth_start = 1
 
                     # Recall that trace_call_result_previous is the previous interpretable
                     if trace_call_result_previous is not None:
-                        scope_depth_start += trace_call_result_previous.get_indent_level_corrected()
+                        indent_depth_start += trace_call_result_previous.get_indent_level_corrected()
 
                     # Create new Scope
                     scope_new: Scope = Scope(
-                        scope_depth_start,
-                        scope_depth_by_analyzer,
+                        indent_depth_start,
+                        indent_depth_by_scope,
                         scope_current  # Parent Scope object
                     )
 
@@ -419,7 +418,10 @@ class PythonCodeAnalyzer:
                             1. TraceCallResult with Event == Line is created
                     """
 
-                    interpretable_current = Interpretable(scope_current, constants.Event.LINE)
+                    interpretable_current = Interpretable(
+                        scope_current,
+                        constants.Event.LINE)
+
                     self.list_interpretable.append(interpretable_current)
 
                 ####################
@@ -474,12 +476,12 @@ class PythonCodeAnalyzer:
             elif self_from_frame_locals is self:
 
                 # Procedure that must be done if possible
-                _procedure: Union[PythonCodeAnalyzer._Procedure, None] = (
+                _procedure: Union[CodeAnalyzer._Procedure, None] = (
                     self._list_procedure.pop() if self._list_procedure else None
                 )
 
                 # If the method record_dict_for_line_next() was called
-                if _procedure == PythonCodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
+                if _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
                     """
                     Process:
                         1. Pop the previous interpretable that was created from self.list_interpretable 
@@ -487,7 +489,7 @@ class PythonCodeAnalyzer:
                             Note that the previous TraceCallResult should have been
                                 TraceCallResult with Event == Line
                             and should been a
-                                python_code_analyzer.record_dict_for_line_next()
+                                code_analyzer.record_dict_for_line_next()
                             call which is unrelated to the code being analyzed and therefore will be removed
                             (which is why it's popped)
                         2 Route 1. 
@@ -499,13 +501,11 @@ class PythonCodeAnalyzer:
                     _interpretable_popped = scope_current.pop_interpretable()  # 1.
 
                     _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
-                    print(trace_call_result_previous.get_event(), "FUCKKK")
                     if trace_call_result_previous.get_event() == constants.Event.RETURN:
-                        print("FUUUUUUUUUUUUU")
                         # Previous interpretable from the current scope
                         _interpretable_top = scope_current.get_interpretable_top()  # 3.
 
-                        # IF NONE LOOK AT PARETN FOR INTERPRETABLES
+                        # IF NONE LOOK AT THE PARENT SCOPE FOR THE INTERPRETABLE
                         # 3 Route 1.
                         if _interpretable_top is None:
                             _scope_parent = scope_current.get_scope_parent()
@@ -520,12 +520,13 @@ class PythonCodeAnalyzer:
                             )
 
                     else:
-                        self._list_dict_k_variable_v_value_for_trace_call_result_next.append(_dict_k_variable_v_value)  # 2.
+                        self._list_dict_k_variable_v_value_for_trace_call_result_next.append(
+                            _dict_k_variable_v_value)  # 2.
 
                     self._bool_record_dict_for_line_call_is_trace_call_result_previous = True
 
                 # If the method record_dict_for_line_previous() was called
-                elif _procedure == PythonCodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
+                elif _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
                     """
                     Process:
                         1. Pop the previous interpretable that was created from self.list_interpretable 
@@ -533,7 +534,7 @@ class PythonCodeAnalyzer:
                             Note that the previous TraceCallResult should have been
                                 TraceCallResult with Event == Line
                             and should been a
-                                python_code_analyzer.record_dict_for_line_previous()
+                                code_analyzer.record_dict_for_line_previous()
                             call which is unrelated to the code being analyzed and therefore will be removed
                             (which is why it's popped)
                         2. Steal the popped interpretable's dict_k_variable_v_value and add it to
@@ -583,14 +584,13 @@ class PythonCodeAnalyzer:
 
                         # 3 Route 2. Top Interpretable's primary TraceCallResult has Event == Call
                         if _trace_call_result_primary.get_event() == constants.Event.CALL:
-
                             """
                             The below will select the correct Interpretable  
                             
                             Example:
                                 Code:
                                     do_something()  
-                                    python_code_analyzer.record_dict_for_line_previous({"Key": "Value"})
+                                    code_analyzer.record_dict_for_line_previous({"Key": "Value"})
                                     
                                 Result:
                                     do_something()  {"Key": "Value"}
@@ -612,18 +612,18 @@ class PythonCodeAnalyzer:
             if event == constants.Event.RETURN.value:
 
                 if self_from_frame_locals is self:
-                    self.__scope_depth_count_self -= 1
+                    self.__depth_scope_count_self -= 1
 
             elif event == constants.Event.CALL.value:
 
                 if self_from_frame_locals is self:
-                    self.__scope_depth_count_self += 1
+                    self.__depth_scope_count_self += 1
 
             ####################
             # DEBUGGING TAIL START
             ####################
 
-            # print(f"SELF COUNTER: {self.__scope_depth_count_self}")
+            # print(f"SELF COUNTER: {self.__depth_scope_count_self}")
             # print("-" * 10)
 
             ####################
@@ -653,9 +653,11 @@ class PythonCodeAnalyzer:
         """
 
         for index, interpretable in enumerate(self.list_interpretable):
-            self.dict_k_interpretable_v_count_relative[interpretable] += 1
+            self.dict_k_interpretable_v_list_interpretable[interpretable].append(interpretable)
 
-            execution_number_relative = self.dict_k_interpretable_v_count_relative.get(interpretable)
+            list_interpretable = self.dict_k_interpretable_v_list_interpretable.get(interpretable)
+
+            execution_number_relative = len(list_interpretable)
 
             interpretable.set_anlaysis_info(execution_number_relative, index)
 
@@ -669,7 +671,7 @@ class PythonCodeAnalyzer:
         """
         self._list_dict_k_variable_v_value_for_trace_call_result_next.append(dict_k_variable_v_value)
 
-        self._list_procedure.append(PythonCodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT)
+        self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT)
 
     def record_dict_for_line_previous(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
         """
@@ -681,7 +683,7 @@ class PythonCodeAnalyzer:
 
         self._list_dict_k_variable_v_value_for_trace_call_result_previous.append(dict_k_variable_v_value)
 
-        self._list_procedure.append(PythonCodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
+        self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
 
     def print(self):
 
@@ -689,28 +691,61 @@ class PythonCodeAnalyzer:
             raise Exception("Cannot call this function until the stop method is called!")
 
         print("{}\n{}\n{}\n".format("#" * 100, "*** CODE ANALYSIS ***", "#" * 100))
+
+        ########################################
+
         print("{}\n{}\n{}\n".format("-" * 50, "Execution Analysis", "-" * 50))
 
         colorama.init()
 
-        print(PRINT_FORMAT.format("Index", "Line #", "Depth #", "Count", "Code + {Variable: Value}", ""))
+        print(_get_execution_analysis_string("Exe Index Rel", "Line #", "Scope depth", "Indent lvl", "Exe #", "Code + {Variable: Value}",
+                                             ""))
         for interpretable in self.list_interpretable:
-            print(_get_execution_analysis_string(interpretable))
+            print(_get_execution_analysis_string_interpretable(interpretable))
+
+        ########################################
 
         print("{}\n{}\n{}\n".format("-" * 50, "Line Analysis", "-" * 50))
 
+        list_interpretable: List[Interpretable]
+        for interpretable, list_interpretable in self.dict_k_interpretable_v_list_interpretable.items():
+            trace_call_result = interpretable.get_trace_call_result_primary()
+
+            line_of_code = trace_call_result.code_line_strip
+
+            filename_full = trace_call_result.filename_full
+
+            count = len(list_interpretable)
+
+            print("\nLine of Code: {}\nFile: {}\nCount: {}".format(line_of_code, filename_full, count))
+
+            generator_information = ((
+                _interpretable.execution_index_global,
+                _interpretable.execution_number_relative,
+                _interpretable.dict_k_variable_v_value
+            ) for _interpretable in list_interpretable)
+
+            df_information = pd.DataFrame(
+                generator_information,
+                columns=["Execution Index",
+                         "Scope Depth"
+                         "Execution Number Relative",
+                         "{Key: Value} Pairs"])
+
+            with pd.option_context('display.max_rows', None, ):
+                print(df_information.to_string())
+
+            print("\n-----")
 
 
-
-        df_ = pd.DataFrame()
-
-
-def _get_execution_analysis_string(interpretable: Interpretable):
+def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
     trace_call_result = interpretable.get_trace_call_result_primary()
 
     #####
 
     line_number = trace_call_result.code_line_number
+
+    indent_depth_by_scope = interpretable.scope_parent.indent_depth_by_scope
 
     indent_level = trace_call_result.get_indent_level_corrected()
 
@@ -723,11 +758,31 @@ def _get_execution_analysis_string(interpretable: Interpretable):
 
     ##########
 
-    string = PRINT_FORMAT.format(
+    return _get_execution_analysis_string(
         interpretable.get_execution_index_global(),
         line_number,
+        indent_depth_by_scope,
         indent_level,
         interpretable.get_execution_number_relative(),
+        code,
+        dict_k_variable_v_value
+    )
+
+
+def _get_execution_analysis_string(execution_index,
+                                   line_number,
+                                   depth_scope,
+                                   indent_level,
+                                   execution_number_relative,
+                                   code,
+                                   dict_k_variable_v_value
+                                   ):
+    string = PRINT_FORMAT.format(
+        execution_index,
+        line_number,
+        depth_scope,
+        indent_level,
+        execution_number_relative,
         code,
         colorama.Fore.RED + str(dict_k_variable_v_value) + colorama.Style.RESET_ALL
     )

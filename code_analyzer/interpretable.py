@@ -101,7 +101,7 @@ class Interpretable:
     def add_trace_call_result(self, trace_call_result: _trace_call_result.TraceCallResult):
         """
         Notes:
-            This function should not be called from python_code_analyzer, but from the Scope object
+            This function should not be called from code_analyzer, but from the Scope object
         :param trace_call_result:
         :return:
         """

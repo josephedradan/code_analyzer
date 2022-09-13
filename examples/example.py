@@ -21,13 +21,13 @@ Tags:
 Reference:
 
 """
-from code_analyzer import PythonCodeAnalyzer
+from code_analyzer import CodeAnalyzer
 
-python_code_analyzer = PythonCodeAnalyzer()
-python_code_analyzer.start()
+code_analyzer = CodeAnalyzer()
+code_analyzer.start()
 
 
-# @python_code_analyzer.decorator_ignore_callable
+# @code_analyzer.decorator_ignore_callable
 def add(x, y):
     return x + y
 
@@ -71,11 +71,11 @@ def function():
 
     josh.get_nothing()
 
-    python_code_analyzer.record_dict_for_line_next({"x VALUE 1 ON for": x})
-    python_code_analyzer.record_dict_for_line_next({"x VALUE 2 ON for": x})
+    code_analyzer.record_dict_for_line_next({"x VALUE 1 ON for": x})
+    code_analyzer.record_dict_for_line_next({"x VALUE 2 ON for": x})
 
-    python_code_analyzer.record_dict_for_line_previous({"FFFF 1 ON x": i})
-    python_code_analyzer.record_dict_for_line_previous({"FFFF 2 ON x": i})
+    code_analyzer.record_dict_for_line_previous({"FFFF 1 ON x": i})
+    code_analyzer.record_dict_for_line_previous({"FFFF 2 ON x": i})
 
     # The belwo does not include the additional lines that complete the statement
     testing = (
@@ -84,20 +84,20 @@ def function():
 
     for i in range(4):
         print(i)
-        python_code_analyzer.record_dict_for_line_next({"TESTING ON x += 1": "uhhh..."})
+        code_analyzer.record_dict_for_line_next({"TESTING ON x += 1": "uhhh..."})
 
-        python_code_analyzer.record_dict_for_line_previous({"i VALUE 1 ON for": i})
-        python_code_analyzer.record_dict_for_line_previous({"i VALUE 2 ON for": i})
+        code_analyzer.record_dict_for_line_previous({"i VALUE 1 ON for": i})
+        code_analyzer.record_dict_for_line_previous({"i VALUE 2 ON for": i})
 
         x += 1
 
         x
         print()
 
-        python_code_analyzer.record_dict_for_line_next({"IM ON TOP": "YO"})
+        code_analyzer.record_dict_for_line_next({"IM ON TOP": "YO"})
         z = add(i, x)
 
-        python_code_analyzer.record_dict_for_line_previous({"z VALUE": z})
+        code_analyzer.record_dict_for_line_previous({"z VALUE": z})
 
         print(z)
 
@@ -130,11 +130,11 @@ def function():
             self.x = 23
 
     dude = 233333
-    python_code_analyzer.record_dict_for_line_next({"1 SHOULD BE ON bob = Bob()": "TEST 1"})
+    code_analyzer.record_dict_for_line_next({"1 SHOULD BE ON bob = Bob()": "TEST 1"})
 
     bob = Bob()
-    python_code_analyzer.record_dict_for_line_previous({"2 SHOULD BE ON bob = Bob()": "TEST 2"})
-    python_code_analyzer.record_dict_for_line_previous({"3 SHOULD BE ON bob = Bob()": "TEST 3"})
+    code_analyzer.record_dict_for_line_previous({"2 SHOULD BE ON bob = Bob()": "TEST 2"})
+    code_analyzer.record_dict_for_line_previous({"3 SHOULD BE ON bob = Bob()": "TEST 3"})
 
     last_line = 2323
 
@@ -150,48 +150,48 @@ def function():
         return ret_inner()
 
     ret()
-    python_code_analyzer.record_dict_for_line_previous({"SHOULD BE ON ret()": "HELLO"})
-    python_code_analyzer.record_dict_for_line_next({"SHOULD BE ON print": "HELLO"})
+    code_analyzer.record_dict_for_line_previous({"SHOULD BE ON ret()": "HELLO"})
+    code_analyzer.record_dict_for_line_next({"SHOULD BE ON print": "HELLO"})
 
     print("RECURSIVE CALL TESTING")
 
     recursive_call(4)
 
     def idk():
-        python_code_analyzer.record_dict_for_line_previous({"SHOULD BE ON CALLABLE'S HEAD": "JOSEPH"})
+        code_analyzer.record_dict_for_line_previous({"SHOULD BE ON CALLABLE'S HEAD": "JOSEPH"})
         def yo():
             _x = 24
             return 2
 
         print("WHEN AM I CALLED?")
 
-        python_code_analyzer.record_dict_for_line_next({"ON RETURN I THINK": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"ON RETURN I THINK": "JOSEPH"})
 
         return yo()
 
     idk()
-    python_code_analyzer.record_dict_for_line_previous({"ON idk()": "JOSEPH"})
+    code_analyzer.record_dict_for_line_previous({"ON idk()": "JOSEPH"})
 
     def empty():
         x = 2
         z = x + 2
 
         print("YO")
-        # python_code_analyzer.record_dict_for_line_previous({"ON x = 2": "JOSEPH"})
-        python_code_analyzer.record_dict_for_line_next({"ON return?": "JOSEPH"})
+        # code_analyzer.record_dict_for_line_previous({"ON x = 2": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"ON return?": "JOSEPH"})
         # pass
     empty()
 
     def yee():
         x = 2
-        python_code_analyzer.record_dict_for_line_previous({"ON return? 2": "JOSEPH"})
+        code_analyzer.record_dict_for_line_previous({"ON return? 2": "JOSEPH"})
     yee()
 
     def yee2():
         # x = 2
-        python_code_analyzer.record_dict_for_line_next({"Testing next 1": "JOSEPH"})
-        python_code_analyzer.record_dict_for_line_next({"Testing next 2": "JOSEPH"})
-        # python_code_analyzer.record_dict_for_line_previous({"ON yee2() 2123123 2": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"Testing next 1": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"Testing next 2": "JOSEPH"})
+        # code_analyzer.record_dict_for_line_previous({"ON yee2() 2123123 2": "JOSEPH"})
     yee2()
 
     print("BEFORE THE ENDING")
@@ -202,8 +202,8 @@ if __name__ == '__main__':
     a = "This is now shown, which is technically wrong"
     function()
 
-    python_code_analyzer.stop()
+    code_analyzer.stop()
 
     print("THIS TraceCallResult AND THEREFORE Interpretable SHOULD NOT EXIST")
 
-    python_code_analyzer.print()
+    code_analyzer.print()

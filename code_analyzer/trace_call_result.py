@@ -76,7 +76,7 @@ class TraceCallResult:
 
         #####
 
-        self.scope_depth_offset: int = 0
+        self.indent_depth_offset: int = 0
 
         ####################
 
@@ -88,12 +88,12 @@ class TraceCallResult:
         Frame related stuff
         """
 
-        self.filename_raw: str = self.frame.f_code.co_filename
+        self.filename_full: str = self.frame.f_code.co_filename
 
-        self.path_object: Path = Path(self.filename_raw)
+        self.path_object: Path = Path(self.filename_full)
         # print("ABS FILE PATH", self.path_object.absolute())
 
-        self.filename: str = self.path_object.name
+        self.filename_short: str = self.path_object.name
 
         self.code_name: str = self.frame.f_code.co_name
 
@@ -109,16 +109,15 @@ class TraceCallResult:
         Line of code related stuff
         """
 
-        # The line of code (no new line        )
         self.code_line_rstrip = self.code_line.rstrip()
 
-        self.code_line_clean = self.code_line.strip()
+        self.code_line_strip = self.code_line.strip()
 
         self.code_line_spaces_pre = self._get_line_spaces_pre(self.code_line)
 
         ##########
 
-        self.python_key_word = self._get_python_key_word(self.code_line_clean)
+        self.python_key_word = self._get_python_key_word(self.code_line_strip)
 
         ##########
         """
@@ -175,7 +174,7 @@ class TraceCallResult:
         #                                   self.interpretable.scope_parent.get_indent_level_first() +
         #                                   self.interpretable.scope_parent.get_indent_level_relative_to_scope(self)
         #                           ),
-        #                           self.scope_depth_offset
+        #                           self.indent_depth_offset
         #                           )
         #       )
 
@@ -185,7 +184,7 @@ class TraceCallResult:
         return (
                 self.interpretable.scope_parent.get_indent_level_first() +
                 self.interpretable.scope_parent.get_indent_level_relative_to_scope(self) +
-                self.scope_depth_offset
+                self.indent_depth_offset
         )
 
     @staticmethod
@@ -247,13 +246,13 @@ class TraceCallResult:
         """
         Set an additional indent level offset
         """
-        self.scope_depth_offset = value
+        self.indent_depth_offset = value
 
     def __str__(self):
         """
 
         Notes:
-            self.code_object.co_filename  The filename
+            self.code_object.co_filename  The filename_short
             self.code_object.co_freevars  The closure variables
             self.code_object.co_name      Name of the callable that the the line of code is inside of
 
@@ -262,13 +261,13 @@ class TraceCallResult:
 
         result = "{}{}".format(
             self.get_indent_level_corrected() * _PYTHON_INDENT_SPACE_AMOUNT * ' ',
-            self.code_line_clean,
+            self.code_line_strip,
         )
 
         return result
 
     def __hash__(self):
-        return hash((self.filename_raw, self.code_line_number))
+        return hash((self.filename_full, self.code_line_number))
 
     def __eq__(self, other):
         return self.__hash__()

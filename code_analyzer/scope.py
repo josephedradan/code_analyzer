@@ -35,21 +35,21 @@ from code_analyzer import trace_call_result
 
 class Scope:
     def __init__(self,
-                 scope_indent_level_start: int = 0,
-                 scope_indent_level_by_analyzer: int = 0,
+                 indent_depth_start: int = 0,
+                 indent_depth_by_scope: int = 0,
                  scope_parent: Union[Scope, None] = None
                  ):
         """
-        :param scope_indent_level_start:
-        :param scope_indent_level_by_analyzer:
+        :param indent_depth_start:
+        :param indent_depth_by_scope:
         :param scope_parent:
         """
 
         # Starting indent level to place the code
-        self.scope_indent_level_start: int = scope_indent_level_start
+        self.indent_depth_start: int = indent_depth_start
 
         # Depth that is custom
-        self.scope_depth_by_analyzer: int = scope_indent_level_by_analyzer  # HOW DEEP THE SCOPE IS, THIS IS UNRELATED TO EVERYTHING ELSE
+        self.indent_depth_by_scope: int = indent_depth_by_scope  # HOW DEEP THE SCOPE IS, THIS IS UNRELATED TO EVERYTHING ELSE
 
         # Parent Scope
         self.scope_parent: Union[Scope, None] = scope_parent
@@ -122,7 +122,7 @@ class Scope:
         trace_call_result_first = self._get_trace_call_result_first()
 
         if trace_call_result_first:
-            return self.scope_indent_level_start
+            return self.indent_depth_start
 
         return 0
 
