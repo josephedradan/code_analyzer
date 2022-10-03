@@ -58,6 +58,9 @@ class Scope:
 
         self.list_interpretable: List[interpretable.Interpretable] = []
 
+    def get_indent_depth_by_scope(self) -> int:
+        return self.indent_depth_by_scope
+
     def get_scope_parent(self) -> Union[Scope, None]:
         return self.scope_parent
 

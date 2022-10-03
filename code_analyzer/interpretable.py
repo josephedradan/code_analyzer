@@ -28,6 +28,10 @@ from code_analyzer import scope
 from code_analyzer import trace_call_result as _trace_call_result
 
 
+class NoTraceCallResult(Exception):
+    pass
+
+
 class Interpretable:
 
     def __init__(self,
@@ -89,10 +93,10 @@ class Interpretable:
     def set_interpretable_type(self, interpretable_type: constants.InterpretableType):
         self.interpretable_type = interpretable_type
 
-    def get_execution_number_relative(self) -> Union[int, None]:
+    def get_execution_count(self) -> Union[int, None]:
         return self.execution_number_relative
 
-    def get_execution_index_global(self) -> Union[int, None]:
+    def get_execution_index_relative(self) -> Union[int, None]:
         return self.execution_index_global
 
     def get_list_trace_call(self) -> List[_trace_call_result.TraceCallResult]:
@@ -151,7 +155,7 @@ class Interpretable:
             """
             Recall that last TraceCallResult has has the event Event.RETURN
             
-            In self.list_trace_call_result by index: 
+            In self._list_trace_call_result_raw by index: 
                 0. TraceCallResult with Event == Line Relative to the inner scope_parent
                 1. TraceCallResult with Event == Return Relative to the inner scope_parent
             """
@@ -163,7 +167,7 @@ class Interpretable:
             Recall that this is the definition of the class not the call of it.
             Note that the 0th index TraceCallResult is relative to the outer scope_parent 
             
-            In self.list_trace_call_result by index: 
+            In self._list_trace_call_result_raw by index: 
                 0. TraceCallResult with Event == Line Relative to the outer scope_parent 
                 1. TraceCallResult with Event == Call Relative to the inner scope_parent 
                 2. TraceCallResult with Event == Line Relative to the inner scope_parent
@@ -174,7 +178,7 @@ class Interpretable:
             """
             Recall that the 1st index TraceCallResult is the call
             
-            In self.list_trace_call_result by index:
+            In self._list_trace_call_result_raw by index:
                 0. TraceCallResult Event == Call
             """
 
@@ -182,8 +186,8 @@ class Interpretable:
         elif self.interpretable_type == constants.Event.LINE:
             return self.list_trace_call_result[0]
 
-        raise Exception("Primary TraceCallResult could be returned. This exception happened because something"
-                        " was not handled in this function")
+        raise NoTraceCallResult("Primary TraceCallResult could be returned. This exception happened because something "
+                                "was not handled in this function where this exception was raised.")
 
     def pop_trace_call_result(self) -> _trace_call_result.TraceCallResult:
         """
@@ -229,3 +233,9 @@ class Interpretable:
         :return:
         """
         return self.__hash__()
+
+    def get_scope_parent(self) -> scope.Scope:
+        return self.scope_parent
+
+    def get_interpretable_type(self) -> Union[constants.InterpretableType, None]:
+        return self.interpretable_type

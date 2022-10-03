@@ -187,6 +187,9 @@ class TraceCallResult:
                 self.indent_depth_offset
         )
 
+    def get_code_line_number(self) -> int:
+        return self.code_line_number
+
     @staticmethod
     def _get_line_spaces_pre(string_given: str) -> str:
         """
@@ -239,8 +242,7 @@ class TraceCallResult:
 
         return Keyword(self.python_key_word)
 
-    def get_event(self) -> Event:
-        return Event(self.event)
+
 
     def set_scope_indent_level_offset(self, value: int):
         """
@@ -271,3 +273,6 @@ class TraceCallResult:
 
     def __eq__(self, other):
         return self.__hash__()
+
+    def get_event(self) -> Event:
+        return Event(self.event)

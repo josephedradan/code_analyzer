@@ -23,9 +23,6 @@ Reference:
 """
 from code_analyzer import CodeAnalyzer
 
-code_analyzer = CodeAnalyzer()
-code_analyzer.start()
-
 
 # @code_analyzer.decorator_ignore_callable
 def add(x, y):
@@ -159,6 +156,7 @@ def function():
 
     def idk():
         code_analyzer.record_dict_for_line_previous({"SHOULD BE ON CALLABLE'S HEAD": "JOSEPH"})
+
         def yo():
             _x = 24
             return 2
@@ -180,11 +178,13 @@ def function():
         # code_analyzer.record_dict_for_line_previous({"ON x = 2": "JOSEPH"})
         code_analyzer.record_dict_for_line_next({"ON return?": "JOSEPH"})
         # pass
+
     empty()
 
     def yee():
         x = 2
         code_analyzer.record_dict_for_line_previous({"ON return? 2": "JOSEPH"})
+
     yee()
 
     def yee2():
@@ -192,6 +192,7 @@ def function():
         code_analyzer.record_dict_for_line_next({"Testing next 1": "JOSEPH"})
         code_analyzer.record_dict_for_line_next({"Testing next 2": "JOSEPH"})
         # code_analyzer.record_dict_for_line_previous({"ON yee2() 2123123 2": "JOSEPH"})
+
     yee2()
 
     print("BEFORE THE ENDING")
@@ -199,11 +200,8 @@ def function():
 
 
 if __name__ == '__main__':
-    a = "This is now shown, which is technically wrong"
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
     function()
-
     code_analyzer.stop()
-
-    print("THIS TraceCallResult AND THEREFORE Interpretable SHOULD NOT EXIST")
-
     code_analyzer.print()

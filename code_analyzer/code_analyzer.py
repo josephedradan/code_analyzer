@@ -56,8 +56,9 @@ Reference:
 import sys
 from collections import defaultdict
 from enum import Enum, auto
+from functools import wraps
 from types import TracebackType, FrameType
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Callable
 
 import colorama
 import pandas as pd
@@ -67,6 +68,14 @@ from code_analyzer.scope import Scope
 from code_analyzer.trace_call_result import TraceCallResult
 
 PRINT_FORMAT = "{:<16}{:<10}{:<14}{:<14}{:<16}{} {}"
+
+
+class NoScopeAvailable(Exception):
+    pass
+
+
+class IllegalCall(Exception):
+    pass
 
 
 class CodeAnalyzer:
@@ -110,8 +119,21 @@ class CodeAnalyzer:
 
         ####################
 
-        # Old trace function (This will most likely be restored)
-        self._trace_function_old: Union[TracebackType, None] = None
+        """
+        Original trace function that is past the scope containing the called start() method 
+        (This will most likely be restored)
+        
+        """
+        self._trace_function_original: Union[TracebackType, None] = None
+
+        """
+        Original trace function in the scope where the start() method is called (This will most likely be restored)
+        
+        Notes:
+            Note that the location of this trace function is located where the start() method is located 
+        
+        """
+        self._trace_function_original_base: Union[TracebackType, None] = None
 
         ####################
 
@@ -141,7 +163,8 @@ class CodeAnalyzer:
         ##
         # TraceCallResult stuff
 
-        self.list_trace_call_result: List[TraceCallResult] = []
+        # All TraceCallResult objects (This shouldn't be used for anything important)
+        self._list_trace_call_result_raw: List[TraceCallResult] = []
 
         ##
         # Interpretable stuff
@@ -172,6 +195,26 @@ class CodeAnalyzer:
         
         """
 
+        """
+        Index used in sys._getframe(self._index_frame_object).f_trace to get a frame to add the 
+        trace_function_callback() function to so that more code can be analyzed 
+        
+        If the index is 1, then the code that should be analyzed probably follows the format below:
+            code_analyzer = CodeAnalyzer() 
+            code_analyzer.start()
+            ... # CODE BEING ANALYZED IS HERE
+            code_analyzer.stop() 
+            code_analyzer.print()
+        
+        If the index is 2, then the code that should be analyzed probably follows the format below:
+            code_analyzer = CodeAnalyzer()
+            with code_analyzer as ca:
+                ... # CODE BEING ANALYZED IS HERE
+            code_analyzer.print()
+        
+        """
+        self._index_frame_object: Union[int, None] = None
+
         ##
         # INTERPRETABLE CLASS VARIABLES
         self._trace_call_result_possible_on_board_event_line_for_class: Union[TraceCallResult, None] = None
@@ -183,10 +226,61 @@ class CodeAnalyzer:
         Analysis variables
         
         Notes:
-            These variables are related to analysing the code
+            These variables are related to analyzing the code
         """
 
+        # This is used to count the amount of times an interpretable has been called
         self.dict_k_interpretable_v_list_interpretable: Dict[Interpretable, list] = defaultdict(list)
+
+    def __enter__(self):
+        """
+        Notes:
+            The value of self._index_frame_object is set to 2 because the index 2 contains the code within the
+            "With" keyword scope
+
+            THIS MUST BE CALLED BEFORE self.start()
+
+        :return:
+        """
+        self._index_frame_object = 2
+
+        self.start()
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
+    def __call__(self, callable_: Callable = None):
+        """
+        Higher order decorator
+
+        :param callable_:
+        :return:
+        """
+
+        print("PRE ACTUAL")
+
+        def decorator_actual(callable__: Callable):
+            @wraps(callable__)
+            def wrapper(*args, **kwargs):
+                nonlocal self
+
+
+
+                print("WITH START")
+                self.start()
+                result = callable__(*args, **kwargs)
+                self.stop()
+                print("WITH END")
+
+                return result
+
+
+            return wrapper
+
+        return decorator_actual(callable_) if callable_ else decorator_actual
+
 
     def start(self):
         """
@@ -195,17 +289,18 @@ class CodeAnalyzer:
 
         :return:
         """
-        self._running = True
+
+        print("START")
 
         def trace_function_callback(frame: FrameType, event: str, arg):
             """
-            Custom trace function
+                Custom trace function
 
-            :param frame:
-            :param event:
-            :param arg:
-            :return:
-            """
+                :param frame:
+                :param event:
+                :param arg:
+                :return:
+                """
 
             nonlocal self
 
@@ -226,6 +321,11 @@ class CodeAnalyzer:
             """
             self_from_frame_locals: Union[CodeAnalyzer, None] = frame.f_locals.get("self")
 
+            if not self.list_stack_scope:
+                raise NoScopeAvailable("No scope is available. Has stop() been called on in a higher scope. "
+                                       "Make sure that the stop() method is called in a scope that is on the same "
+                                       "level as the start() method or deeper.")
+
             # Current Scope
             scope_current: Scope = self.list_stack_scope[-1]
 
@@ -236,7 +336,7 @@ class CodeAnalyzer:
 
             # Previously made TraceCallResult object
             trace_call_result_previous: Union[TraceCallResult, None] = (
-                self.list_trace_call_result[-1] if self.list_trace_call_result else None
+                self._list_trace_call_result_raw[-1] if self._list_trace_call_result_raw else None
             )
 
             __bool_event_return_and_record_dict_for_line_call_is_trace_call_result_previous = False
@@ -245,21 +345,21 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################A
 
-            # print("-" * 10)
-            # print("scope_current:", scope_current)
-            # print("interpretable_current:", interpretable_current)
-            # print("frame:", frame)
-            # print("frame.locals:", frame.f_locals)
-            # print("event:", event)
-            # print("self:", self_from_frame_locals)
-            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
-            # _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
-            #     _trace_call_result_new.code_line_strip,
-            #     "|||",
-            #     _trace_call_result_new.event)
-            # )
-            # print("trace_call_result_previous:\n\t{}".format(trace_call_result_previous))
+            print("-" * 10)
+            print("scope_current:", scope_current)
+            print("interpretable_current:", interpretable_current)
+            print("frame:", frame)
+            print("frame.locals:", frame.f_locals)
+            print("event:", event)
+            print("self:", self_from_frame_locals)
+            print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            _trace_call_result_new = TraceCallResult(frame, event, arg, )
+            print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+                _trace_call_result_new.code_line_strip,
+                "|||",
+                _trace_call_result_new.event)
+            )
+            print("trace_call_result_previous:\n\t{}".format(trace_call_result_previous))
 
             ####################
             # DEBUGGING HEAD END
@@ -465,7 +565,7 @@ class CodeAnalyzer:
                         trace_call_result_new.set_scope_indent_level_offset(scope_depth_offset)
 
                     # Add the new trace
-                    self.list_trace_call_result.append(trace_call_result_new)
+                    self._list_trace_call_result_raw.append(trace_call_result_new)
 
                 # Resetter
                 self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
@@ -632,25 +732,82 @@ class CodeAnalyzer:
 
             return trace_function_callback
 
+        ########################################
+
+        # Set the default self._index_frame_object
+        if self._index_frame_object is None:
+            self._index_frame_object = 1
+
+        self._trace_function_original = sys.gettrace()
+        self._trace_function_original_base = sys._getframe(self._index_frame_object).f_trace
+
+        self._running = True
+
+        # Replacing the current trace functions
+        sys._getframe(self._index_frame_object).f_trace = trace_function_callback
         sys.settrace(trace_function_callback)
 
     def stop(self) -> None:
-
         """
         1. Restores trace function to the original one
         2. Perform any post analysis
+        3. Reset
         """
-        sys.settrace(self._trace_function_old)
 
-        self._do_post_analyze()
+        print("STOP")
 
-        self._running = False
+        # Restoring the current trace functions to its original function
+
+        if self._running:  # This guard prevents potential exceptions and bugs from occurring
+
+            sys._getframe(self._index_frame_object).f_trace = self._trace_function_original_base
+            sys.settrace(self._trace_function_original)
+
+            ##########
+
+            """
+            Checking to drop the last Interpretable object in self.list_interpretable because
+            the last interpretable is unrelated to the code being tested 
+            
+            Notes:
+                self._index_frame_object == 1  
+                    Index of a frame to add the trace_function_callback(...) function to.
+                    self._index_frame_object == 1 uses the methods .start() and .stop()
+                    self._index_frame_object == 2 uses the with keyword
+                
+                indent_scope_depth > 0
+                    This is used to catch any stop() calls from a deeper scope relative to the start() method
+                     
+            IMPORTANT NOTES:
+                COMMENT OUT THE CODE BELOW FOR DEBUGGING
+            """
+            if self.list_interpretable:
+                interpretable_last: Interpretable = self.list_interpretable[-1]
+
+                indent_scope_depth = interpretable_last.get_scope_parent().get_indent_depth_by_scope()
+                print("NNNNNNNNNNNN", self._index_frame_object, indent_scope_depth)
+                print()
+                if self._index_frame_object == 1 or indent_scope_depth > 0:
+                    self.list_interpretable.pop()
+
+            ##########
+
+            self._do_post_analyze()
+
+            self._running = False
+
+            self._trace_function_original = None
+            self._trace_function_original_base = None
+
+            self._index_frame_object = None
 
     def _do_post_analyze(self):
         """
         Any post analysis on the code that was analyzed
         :return:
         """
+
+        self.dict_k_interpretable_v_list_interpretable.clear()  # Resetter/Cleaner
 
         for index, interpretable in enumerate(self.list_interpretable):
             self.dict_k_interpretable_v_list_interpretable[interpretable].append(interpretable)
@@ -677,6 +834,7 @@ class CodeAnalyzer:
         """
         Update update_dict_k_variable_v_value for trace_call_result_previous
 
+
         :param dict_k_variable_v_value:
         :return:
         """
@@ -686,9 +844,18 @@ class CodeAnalyzer:
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
 
     def print(self):
+        """
+        Notes:
+            Exe Index Rel:  Execution Index Relative to the start()
+            Line #:         Line Number in code
+            Scope Depth:    Scope depth (How deep the scope is by index, it is based on a function's call)
+            Indent lvl:     Indent Level (How deep the indent is)
+            Exe Count:      Execution Count (Count of how many times a unique line has been executed)
 
+        :return:
+        """
         if self._running:
-            raise Exception("Cannot call this function until the stop method is called!")
+            raise IllegalCall("Cannot call this function until the stop method is called!")
 
         print("{}\n{}\n{}\n".format("#" * 100, "*** CODE ANALYSIS ***", "#" * 100))
 
@@ -698,7 +865,8 @@ class CodeAnalyzer:
 
         colorama.init()
 
-        print(_get_execution_analysis_string("Exe Index Rel", "Line #", "Scope depth", "Indent lvl", "Exe #", "Code + {Variable: Value}",
+        print(_get_execution_analysis_string("Exe Index Rel", "Line #", "Scope depth", "Indent lvl", "Exe Count",
+                                             "Code + {Variable: Value}",
                                              ""))
         for interpretable in self.list_interpretable:
             print(_get_execution_analysis_string_interpretable(interpretable))
@@ -720,22 +888,25 @@ class CodeAnalyzer:
             print("\nLine of Code: {}\nFile: {}\nCount: {}".format(line_of_code, filename_full, count))
 
             generator_information = ((
-                _interpretable.execution_index_global,
-                _interpretable.execution_number_relative,
+                _interpretable.get_execution_index_relative(),
+                _interpretable.get_scope_parent().get_indent_depth_by_scope(),
+                _interpretable.get_execution_count(),
                 _interpretable.dict_k_variable_v_value
             ) for _interpretable in list_interpretable)
 
             df_information = pd.DataFrame(
                 generator_information,
-                columns=["Execution Index",
-                         "Scope Depth"
-                         "Execution Number Relative",
+                columns=["Execution Index Relative",
+                         "Scope Depth",
+                         "Execution Count",
                          "{Key: Value} Pairs"])
-
             with pd.option_context('display.max_rows', None, ):
                 print(df_information.to_string())
 
             print("\n-----")
+
+    def get_list_interpretable(self) -> List[Interpretable]:
+        return self.list_interpretable
 
 
 def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
@@ -743,9 +914,9 @@ def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
 
     #####
 
-    line_number = trace_call_result.code_line_number
+    line_number = trace_call_result.get_code_line_number()
 
-    indent_depth_by_scope = interpretable.scope_parent.indent_depth_by_scope
+    indent_depth_by_scope = interpretable.get_scope_parent().get_indent_depth_by_scope()
 
     indent_level = trace_call_result.get_indent_level_corrected()
 
@@ -759,11 +930,11 @@ def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
     ##########
 
     return _get_execution_analysis_string(
-        interpretable.get_execution_index_global(),
+        interpretable.get_execution_index_relative(),
         line_number,
         indent_depth_by_scope,
         indent_level,
-        interpretable.get_execution_number_relative(),
+        interpretable.get_execution_count(),
         code,
         dict_k_variable_v_value
     )
