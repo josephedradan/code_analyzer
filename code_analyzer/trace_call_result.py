@@ -101,7 +101,7 @@ class TraceCallResult:
 
         self.code_object: CodeType = self.frame.f_code
 
-        # The line of code
+        # The exact line of code given its line number
         self.code_line = linecache.getline(str(self.path_object.absolute()), self.frame.f_lineno)
 
         ##########
@@ -133,14 +133,14 @@ class TraceCallResult:
         """
         self.interpretable = interpretable
 
-    def get_indent_level_by_code_execution(self) -> int:
+    def get_indent_depth_by_code_execution(self) -> int:
         """
         Indent level based on code execution
 
         """
         return self.level_by_code_execution
 
-    def get_indent_level_relative_to_scope(self) -> int:
+    def get_indent_depth_relative_to_scope(self) -> int:
         """
         Indent level relative to the scope that the interpretable is one
 
@@ -148,7 +148,7 @@ class TraceCallResult:
         if not self.interpretable:
             return 0
 
-        return self.interpretable.scope_parent.get_indent_level_relative_to_scope(self)
+        return self.interpretable.scope_parent.get_indent_depth_relative_to_scope(self)
 
     def get_indent_level_corrected(self) -> int:
         """
@@ -163,29 +163,51 @@ class TraceCallResult:
         # DEBUGGING START
         ####################
 
-        # print("LEVEL BY EXECUTION: {}\n"
-        #       "RELATIVE: {}\n"
-        #       "START: {}\n"
-        #       "CORRECTED (START + RELATIVE): {}\n"
-        #       "OFFSET: {}".format(self.get_indent_level_by_code_execution(),
-        #                           self.interpretable.scope_parent.get_indent_level_relative_to_scope(self),
-        #                           self.interpretable.scope_parent.get_indent_level_first(),
-        #                           (
-        #                                   self.interpretable.scope_parent.get_indent_level_first() +
-        #                                   self.interpretable.scope_parent.get_indent_level_relative_to_scope(self)
-        #                           ),
-        #                           self.indent_depth_offset
-        #                           )
-        #       )
-
+        # print("--")
+        # print(self.code_line_strip)
+        # print(
+        #     "SCOPE INDENT DEPTH CORRECTED: {}\n"
+        #     "INDENT DEPTH RELATIVE: {}\n"
+        #     "INDENT DEPTH OFFEST: {}\n".format(
+        #         self.interpretable.scope_parent.get_indent_depth_corrected(),
+        #         self.get_indent_depth_relative(),
+        #         self.indent_depth_offset
+        #
+        #     )
+        # )
+        # print("--")
         ####################
         # DEBUGGING END
         ####################
-        return (
-                self.interpretable.scope_parent.get_indent_level_first() +
-                self.interpretable.scope_parent.get_indent_level_relative_to_scope(self) +
+
+        """
+        Math
+            1. Indent depth based on the First Interpretable in the scope.
+            2. Current Interpretable Original Indent - First Interpretable Original Indent.
+                This corrects indented Interpretables that don't happen because of a scope change such
+                as the body of a for loop.
+            3. Offset based.
+        """
+        result = (
+                self.interpretable.scope_parent.get_indent_depth_corrected() +
+                self.get_indent_depth_relative() +
                 self.indent_depth_offset
         )
+
+        return result
+
+    def get_indent_depth_relative(self):
+        """
+        Indent depth of the original code of the first Interpretable in the scope -
+        Indent depth of the original code of this Interpretable (which is also in the same scope)
+
+        Notes:
+            Due to code being indented without being in another scope e.g. for loops,
+
+
+        :return:
+        """
+        return self.interpretable.scope_parent.get_indent_depth_relative_to_scope(self)
 
     def get_code_line_number(self) -> int:
         return self.code_line_number
@@ -242,11 +264,14 @@ class TraceCallResult:
 
         return Keyword(self.python_key_word)
 
-
-
-    def set_scope_indent_level_offset(self, value: int):
+    def set_indent_depth_offset(self, value: int):
         """
         Set an additional indent level offset
+
+        Notes:
+            Examples this being used:
+                1. Moving a function call to the correct scope since the function definition's scope will be
+                used by default
         """
         self.indent_depth_offset = value
 

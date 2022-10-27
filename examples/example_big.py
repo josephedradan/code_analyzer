@@ -26,7 +26,8 @@ from code_analyzer import CodeAnalyzer
 
 # @code_analyzer.decorator_ignore_callable
 def add(x, y):
-    return x + y
+    result = x + y
+    return result
 
 
 def recursive_call(value: int):
@@ -51,7 +52,7 @@ def function():
         class Josh:
 
             def get_nothing(self) -> str:
-                return "YOu Just go None"
+                return "You Just go None"
 
             def __str__(self):
                 return "Josh's Name"

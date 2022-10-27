@@ -35,21 +35,16 @@ from code_analyzer import trace_call_result
 
 class Scope:
     def __init__(self,
-                 indent_depth_start: int = 0,
-                 indent_depth_by_scope: int = 0,
-                 scope_parent: Union[Scope, None] = None
+                 scope_parent: Union[Scope, None] = None,
+                 indent_depth_offset: int = 0
                  ):
         """
-        :param indent_depth_start:
-        :param indent_depth_by_scope:
-        :param scope_parent:
+        :param scope_parent: Parent scope if it exists
+        :param indent_depth_offset: Additional depth
         """
 
-        # Starting indent level to place the code
-        self.indent_depth_start: int = indent_depth_start
-
-        # Depth that is custom
-        self.indent_depth_by_scope: int = indent_depth_by_scope  # HOW DEEP THE SCOPE IS, THIS IS UNRELATED TO EVERYTHING ELSE
+        # Offset Scope depth
+        self.indent_depth_offset: int = indent_depth_offset
 
         # Parent Scope
         self.scope_parent: Union[Scope, None] = scope_parent
@@ -57,9 +52,6 @@ class Scope:
         ####################
 
         self.list_interpretable: List[interpretable.Interpretable] = []
-
-    def get_indent_depth_by_scope(self) -> int:
-        return self.indent_depth_by_scope
 
     def get_scope_parent(self) -> Union[Scope, None]:
         return self.scope_parent
@@ -74,21 +66,6 @@ class Scope:
             list_trace_call_result = self.list_interpretable[0].get_list_trace_call()
             return list_trace_call_result[0]
 
-    @staticmethod
-    def _get_indent_level_relative(trace_call_result_primary: trace_call_result.TraceCallResult,
-                                   trace_call_result_secondary: trace_call_result.TraceCallResult):
-        """
-        Helper function for get_indent_level_relative_to_scope
-
-        :param trace_call_result_primary:
-        :param trace_call_result_secondary:
-        :return:
-        """
-        return (
-                trace_call_result_secondary.get_indent_level_by_code_execution() -
-                trace_call_result_primary.get_indent_level_by_code_execution()
-        )
-
     def add_interpretable(self, interpretable: interpretable.Interpretable) -> None:
         self.list_interpretable.append(interpretable)
 
@@ -98,7 +75,23 @@ class Scope:
 
         return None
 
-    def get_indent_level_relative_to_scope(self, trace_call_result_given: trace_call_result.TraceCallResult):
+    @staticmethod
+    def _get_indent_depth_relative(trace_call_result_primary: trace_call_result.TraceCallResult,
+                                   trace_call_result_secondary: trace_call_result.TraceCallResult):
+        """
+        Helper function for get_indent_level_relative_to_scope
+
+        :param trace_call_result_primary:
+        :param trace_call_result_secondary:
+        :return:
+        """
+
+        return (
+                trace_call_result_secondary.get_indent_depth_by_code_execution() -
+                trace_call_result_primary.get_indent_depth_by_code_execution()
+        )
+
+    def get_indent_depth_relative_to_scope(self, trace_call_result_given: trace_call_result.TraceCallResult):
         """
         Get the corrected indent level for the given TraceCallResult
 
@@ -111,21 +104,34 @@ class Scope:
         trace_call_result_first = self._get_trace_call_result_first()
 
         if trace_call_result_first:
-            return self._get_indent_level_relative(
+
+            return self._get_indent_depth_relative(
                 trace_call_result_first,
                 trace_call_result_given
             )
+
         return 0
 
-    def get_indent_level_first(self) -> int:
+    def get_indent_depth_corrected(self) -> int:
         """
-        Get the indent level of the first TraceCallResult
+        Get the indent depth based on the given scope and indent depth offset
+
+        :return:
+        """
+        if self.scope_parent is None:
+            return 0
+
+        return self.scope_parent.get_indent_depth_corrected() + 1 + self.indent_depth_offset
+
+    def get_indent_depth_interpretable_first(self) -> int:
+        """
+        Get the indent depth of the first TraceCallResult
 
         """
         trace_call_result_first = self._get_trace_call_result_first()
 
         if trace_call_result_first:
-            return self.indent_depth_start
+            return self.get_indent_depth_corrected()
 
         return 0
 
@@ -138,7 +144,10 @@ class Scope:
 
         return None
 
-    def get_interpretable(self, index) -> Union[interpretable.Interpretable, None]:
+    def get_interpretable(self, index: Union[None, int] = None) -> Union[interpretable.Interpretable, None]:
+        if index is None:
+            return self.get_interpretable_top()
+
         try:
             return self.list_interpretable[index]
         except IndexError as e:

@@ -62,6 +62,7 @@ from typing import Union, List, Dict, Any, Callable
 
 import colorama
 import pandas as pd
+
 from code_analyzer import constants
 from code_analyzer.interpretable import Interpretable
 from code_analyzer.scope import Scope
@@ -169,7 +170,7 @@ class CodeAnalyzer:
         ##
         # Interpretable stuff
 
-        self.list_interpretable: List[Interpretable] = []
+        self.list_interpretable_global: List[Interpretable] = []
 
         self.interpretable_current: Union[Interpretable, None] = None
 
@@ -221,6 +222,9 @@ class CodeAnalyzer:
 
         self._trace_call_result_possible_on_board_event_call_for_class: Union[TraceCallResult, None] = None
 
+        # Count the amount of times to ignore the initial trace executions
+        self._count_ignore_initial_trace_execution: int = 0
+
         ##################################################
         """
         Analysis variables
@@ -266,9 +270,10 @@ class CodeAnalyzer:
             def wrapper(*args, **kwargs):
                 nonlocal self
 
-
-
                 print("WITH START")
+
+                self._count_ignore_initial_trace_execution = 2  #
+
                 self.start()
                 result = callable__(*args, **kwargs)
                 self.stop()
@@ -276,11 +281,9 @@ class CodeAnalyzer:
 
                 return result
 
-
             return wrapper
 
         return decorator_actual(callable_) if callable_ else decorator_actual
-
 
     def start(self):
         """
@@ -322,16 +325,26 @@ class CodeAnalyzer:
             self_from_frame_locals: Union[CodeAnalyzer, None] = frame.f_locals.get("self")
 
             if not self.list_stack_scope:
-                raise NoScopeAvailable("No scope is available. Has stop() been called on in a higher scope. "
-                                       "Make sure that the stop() method is called in a scope that is on the same "
-                                       "level as the start() method or deeper.")
+                raise NoScopeAvailable("No scope is available, the possible errors are 1. Is stop() called on in a "
+                                       "higher scope, make sure that the stop() method is called in a scope that is "
+                                       "on the same level as the start() method or deeper. 2. The analyzer has a"
+                                       "a coding error.")
 
             # Current Scope
             scope_current: Scope = self.list_stack_scope[-1]
 
-            # Current interpretable
+            """
+            Current interpretable
+            
+            Notes:
+                DO NOT USE scope_current.get_interpretable(), self.list_interpretable_global allows 
+                access to the previous interpretable that may not be relative to the scope_current as it
+                might be from the previous scope. An example of this functionality is communicating with
+                a function definition from that function's interpretables.
+                
+            """
             interpretable_current: Union[Interpretable, None] = (
-                self.list_interpretable[-1] if self.list_interpretable else None
+                self.list_interpretable_global[-1] if self.list_interpretable_global else None
             )
 
             # Previously made TraceCallResult object
@@ -365,6 +378,9 @@ class CodeAnalyzer:
             # DEBUGGING HEAD END
             ####################
 
+            # I
+            # if self._count_ignore_initial_trace_execution == 0:
+
             """
             Analyze the code from the result of this trace function's call
             
@@ -374,26 +390,52 @@ class CodeAnalyzer:
             """
             if self_from_frame_locals is not self and self.__depth_scope_count_self == 0:
 
-                indent_depth_by_scope = len(self.list_stack_scope)
-
                 ####################
-                # SCOPE STUFF (Creating the scope_parent, etc...)
+                """
+                Creating a future scope
+                
+                IMPORTANT NOTES:
+                    THE CODE BELOW MUST BE PLACED HERE BECAUSE THERE ARE 2 PLACES WHERE
+                    A CONDITION USING constants.Event.CALL IS USED WHICH WOULD MAKE THE CODE BELOW APPLY
+                    TO THOSE PLACES
+                
+                """
                 ####################
                 if event == constants.Event.CALL.value:
-
                     # When a scope_parent is created, the initial level should be 1
-                    indent_depth_start = 1
+                    indent_depth_offset = 0
 
                     # Recall that trace_call_result_previous is the previous interpretable
                     if trace_call_result_previous is not None:
-                        indent_depth_start += trace_call_result_previous.get_indent_level_corrected()
+                        indent_depth_offset += trace_call_result_previous.get_indent_depth_relative()
 
                     # Create new Scope
                     scope_new: Scope = Scope(
-                        indent_depth_start,
-                        indent_depth_by_scope,
-                        scope_current  # Parent Scope object
+                        scope_current,  # Parent Scope object
+                        indent_depth_offset
                     )
+                    print("SDFSDFSDF")
+                    for i in self.list_stack_scope:
+                        print(i)
+                        for z in i.list_interpretable:
+                            print("\t", z, "FSDFSDF")
+                        print("END")
+
+                    # NEW SHIT HERE
+                    if self._count_ignore_initial_trace_execution == 2:
+                        print("SDFSDFSDF")
+                        # for i in self.list_stack_scope:
+                        #     print(i)
+                        #     for z in i.list_interpretable:
+                        #         print("\t",z, "FSDFSDF")
+                        #     print("END")
+                        # self._count_ignore_initial_trace_execution = 0
+                        scope_new = scope_current
+                        # print("BK", self.list_interpretable_global.pop())  # CANT POP EHRE BECAUASE NO EXSIT IN LIST YET
+                        # print("FK", self._list_trace_call_result_raw.pop())
+
+
+
 
                     self.list_stack_scope.append(scope_new)
 
@@ -452,7 +494,7 @@ class CodeAnalyzer:
 
                         # Replace interpretable_current with a new one
                         interpretable_current = Interpretable(scope_current, constants.Keyword.CLASS)
-                        self.list_interpretable.append(interpretable_current)
+                        self.list_interpretable_global.append(interpretable_current)
 
                         self._trace_call_result_possible_on_board_event_line_for_class = trace_call_result_new
 
@@ -474,7 +516,7 @@ class CodeAnalyzer:
 
                         if self._trace_call_result_possible_on_board_event_line_for_class is not None:
                             interpretable_temp = Interpretable(scope_current)
-                            self.list_interpretable.append(interpretable_temp)
+                            self.list_interpretable_global.append(interpretable_temp)
 
                             interpretable_temp.add_trace_call_result(
                                 self._trace_call_result_possible_on_board_event_line_for_class
@@ -482,7 +524,7 @@ class CodeAnalyzer:
 
                         if self._trace_call_result_possible_on_board_event_call_for_class is not None:
                             interpretable_temp = Interpretable(scope_current)
-                            self.list_interpretable.append(interpretable_temp)
+                            self.list_interpretable_global.append(interpretable_temp)
 
                             interpretable_temp.add_trace_call_result(
                                 self._trace_call_result_possible_on_board_event_call_for_class
@@ -506,7 +548,14 @@ class CodeAnalyzer:
                     """
 
                     interpretable_current = Interpretable(scope_current, constants.Event.CALL)
-                    self.list_interpretable.append(interpretable_current)
+                    self.list_interpretable_global.append(interpretable_current)
+
+
+                    # NEW SHIT
+                    if self._count_ignore_initial_trace_execution == 2:
+                        scope_new.pop_interpretable()
+                        self.list_interpretable_global.pop()
+
 
                 ####################
                 # Interpretable (DEFAULT)
@@ -522,7 +571,7 @@ class CodeAnalyzer:
                         scope_current,
                         constants.Event.LINE)
 
-                    self.list_interpretable.append(interpretable_current)
+                    self.list_interpretable_global.append(interpretable_current)
 
                 ####################
                 # Main behavior
@@ -555,20 +604,37 @@ class CodeAnalyzer:
                     # Add the newly created TraceCallResult into interpretable_current
                     interpretable_current.add_trace_call_result(trace_call_result_new)
 
-                    # Correct the scope_parent level of the newly created TraceCallResult
+                    """
+                    Correct the indent depth for the newly created TraceCallResult
+                    
+                    Notes:
+                        Primarily used for correcting function calls to be in their correct scope
+                        regardless from where they were defined. For example, if a function is defined on
+                        indent depth 20 and that function is called on indent depth 10, then the analyzer
+                        will move the function call and its body to the correct indent depth of 10 which
+                        represents the correct scope where the code is being interpreted at.
+                        
+                        
+                    """
                     if trace_call_result_previous is not None and event == constants.Event.CALL.value:
-                        scope_depth_offset = (
-                                trace_call_result_previous.get_indent_level_relative_to_scope() -
-                                trace_call_result_new.get_indent_level_relative_to_scope()
+                        indent_depth_offset = (
+                                trace_call_result_previous.get_indent_depth_relative_to_scope() -
+                                trace_call_result_new.get_indent_depth_relative_to_scope()
                         )
 
-                        trace_call_result_new.set_scope_indent_level_offset(scope_depth_offset)
+                        trace_call_result_new.set_indent_depth_offset(indent_depth_offset)
 
                     # Add the new trace
                     self._list_trace_call_result_raw.append(trace_call_result_new)
 
+                    # NEW SHIT
+                    if self._count_ignore_initial_trace_execution == 2:
+                        self._list_trace_call_result_raw.pop()
+                        self._count_ignore_initial_trace_execution =0
+
                 # Resetter
                 self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
+
 
             ####################
             # self from frame.f_locals is "self" as in "this" object
@@ -584,7 +650,7 @@ class CodeAnalyzer:
                 if _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
                     """
                     Process:
-                        1. Pop the previous interpretable that was created from self.list_interpretable 
+                        1. Pop the previous interpretable that was created from self.list_interpretable_global 
                             and scope_current.
                             Note that the previous TraceCallResult should have been
                                 TraceCallResult with Event == Line
@@ -596,7 +662,7 @@ class CodeAnalyzer:
                         2 Route 2.  
                     """
 
-                    self.list_interpretable.pop()  # 1.
+                    self.list_interpretable_global.pop()  # 1.
 
                     _interpretable_popped = scope_current.pop_interpretable()  # 1.
 
@@ -629,7 +695,7 @@ class CodeAnalyzer:
                 elif _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
                     """
                     Process:
-                        1. Pop the previous interpretable that was created from self.list_interpretable 
+                        1. Pop the previous interpretable that was created from self.list_interpretable_global 
                             and scope_current/ 
                             Note that the previous TraceCallResult should have been
                                 TraceCallResult with Event == Line
@@ -652,7 +718,7 @@ class CodeAnalyzer:
                         5. Mark special condition that operation was done
                          
                     """
-                    self.list_interpretable.pop()  # 1.
+                    self.list_interpretable_global.pop()  # 1.
 
                     """
                     Event Line Interpretable that is record_dict_for_line_previous()
@@ -662,7 +728,8 @@ class CodeAnalyzer:
 
                     _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
 
-                    self._list_dict_k_variable_v_value_for_trace_call_result_next.append(_dict_k_variable_v_value)  # 2.
+                    self._list_dict_k_variable_v_value_for_trace_call_result_next.append(
+                        _dict_k_variable_v_value)  # 2.
 
                     # Previous interpretable from the current scope
                     _interpretable_top = scope_current.get_interpretable_top()  # 3.
@@ -730,8 +797,11 @@ class CodeAnalyzer:
             # DEBUGGING TAIL END
             ####################
 
-            return trace_function_callback
+            # else:
+            #     self._count_ignore_initial_trace_execution -= 1
+            #     print("DEAD MAN", self._count_ignore_initial_trace_execution)
 
+            return trace_function_callback
         ########################################
 
         # Set the default self._index_frame_object
@@ -766,7 +836,7 @@ class CodeAnalyzer:
             ##########
 
             """
-            Checking to drop the last Interpretable object in self.list_interpretable because
+            Checking to drop the last Interpretable object in self.list_interpretable_global because
             the last interpretable is unrelated to the code being tested 
             
             Notes:
@@ -781,14 +851,14 @@ class CodeAnalyzer:
             IMPORTANT NOTES:
                 COMMENT OUT THE CODE BELOW FOR DEBUGGING
             """
-            if self.list_interpretable:
-                interpretable_last: Interpretable = self.list_interpretable[-1]
+            if self.list_interpretable_global:
+                interpretable_last: Interpretable = self.list_interpretable_global[-1]
 
-                indent_scope_depth = interpretable_last.get_scope_parent().get_indent_depth_by_scope()
+                indent_scope_depth = interpretable_last.get_scope_parent().get_indent_depth_corrected()
                 print("NNNNNNNNNNNN", self._index_frame_object, indent_scope_depth)
                 print()
                 if self._index_frame_object == 1 or indent_scope_depth > 0:
-                    self.list_interpretable.pop()
+                    self.list_interpretable_global.pop()
 
             ##########
 
@@ -809,7 +879,7 @@ class CodeAnalyzer:
 
         self.dict_k_interpretable_v_list_interpretable.clear()  # Resetter/Cleaner
 
-        for index, interpretable in enumerate(self.list_interpretable):
+        for index, interpretable in enumerate(self.list_interpretable_global):
             self.dict_k_interpretable_v_list_interpretable[interpretable].append(interpretable)
 
             list_interpretable = self.dict_k_interpretable_v_list_interpretable.get(interpretable)
@@ -868,7 +938,7 @@ class CodeAnalyzer:
         print(_get_execution_analysis_string("Exe Index Rel", "Line #", "Scope depth", "Indent lvl", "Exe Count",
                                              "Code + {Variable: Value}",
                                              ""))
-        for interpretable in self.list_interpretable:
+        for interpretable in self.list_interpretable_global:
             print(_get_execution_analysis_string_interpretable(interpretable))
 
         ########################################
@@ -889,7 +959,7 @@ class CodeAnalyzer:
 
             generator_information = ((
                 _interpretable.get_execution_index_relative(),
-                _interpretable.get_scope_parent().get_indent_depth_by_scope(),
+                _interpretable.get_scope_parent().get_indent_depth_corrected(),
                 _interpretable.get_execution_count(),
                 _interpretable.dict_k_variable_v_value
             ) for _interpretable in list_interpretable)
@@ -906,7 +976,7 @@ class CodeAnalyzer:
             print("\n-----")
 
     def get_list_interpretable(self) -> List[Interpretable]:
-        return self.list_interpretable
+        return self.list_interpretable_global
 
 
 def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
@@ -916,7 +986,7 @@ def _get_execution_analysis_string_interpretable(interpretable: Interpretable):
 
     line_number = trace_call_result.get_code_line_number()
 
-    indent_depth_by_scope = interpretable.get_scope_parent().get_indent_depth_by_scope()
+    indent_depth_by_scope = interpretable.get_scope_parent().get_indent_depth_corrected()
 
     indent_level = trace_call_result.get_indent_level_corrected()
 

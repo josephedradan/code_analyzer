@@ -70,7 +70,33 @@ def test_code_analyzer_basic():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable) == 8
+    assert len(code_analyzer.list_interpretable_global) == 8
+
+
+def test_code_analyzer_on_a_class():
+    """
+    Test if the analyzer can correctly identify and handle a class definition
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    class Person:
+        def __init__(self, name: str):
+            self.name = name
+            pass
+
+        def function(self, x: int) -> int:
+            x += 1
+            y = "This should be an interpretable unless this method is called"
+            return x
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    assert len(code_analyzer.list_interpretable_global) == 3
 
 
 def test_code_analyzer_stop_inner():
@@ -113,7 +139,7 @@ def test_code_analyzer_stop_inner():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable) == 6
+    assert len(code_analyzer.list_interpretable_global) == 6
 
 
 def test_code_analyzer_deep():
@@ -171,7 +197,7 @@ def test_code_analyzer_deep():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable) == 8
+    assert len(code_analyzer.list_interpretable_global) == 8
 
 
 def test_code_analyzer_deep_exception_no_scope_available():
@@ -246,7 +272,7 @@ def test_code_analyzer_with():
 
     ca.print()
 
-    assert len(code_analyzer.list_interpretable) == 8
+    assert len(code_analyzer.list_interpretable_global) == 8
 
 
 def test_code_analyzer_with_stop_inner():
@@ -287,7 +313,7 @@ def test_code_analyzer_with_stop_inner():
 
     ca.print()
 
-    assert len(code_analyzer.list_interpretable) == 6
+    assert len(code_analyzer.list_interpretable_global) == 6
 
 
 def test_code_analyzer_with_deep():
@@ -339,7 +365,7 @@ def test_code_analyzer_with_deep():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable) == 8
+    assert len(code_analyzer.list_interpretable_global) == 8
 
 
 def test_code_analyzer_decorator():
@@ -382,4 +408,4 @@ def test_code_analyzer_decorator():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable) == 8
+    assert len(code_analyzer.list_interpretable_global) == 8

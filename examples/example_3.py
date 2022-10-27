@@ -25,12 +25,16 @@ from code_analyzer import CodeAnalyzer
 
 code_analyzer = CodeAnalyzer()
 
+
 @code_analyzer
 def main():
     def add(x: int, y: int):
         code_analyzer.record_dict_for_line_next({"Random Comment": "Good code!"})
         result = x + y
         code_analyzer.record_dict_for_line_previous({"result": result})
+
+        for i in range(1):
+            x = i
 
         return result
 
@@ -43,4 +47,3 @@ def main():
 if __name__ == '__main__':
     main()
     code_analyzer.print()
-

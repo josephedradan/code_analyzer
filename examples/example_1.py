@@ -33,6 +33,9 @@ def add(x: int, y: int):
     result = x + y
     code_analyzer.record_dict_for_line_previous({"result": result})
 
+    for i in range(1):
+        x = i
+
     return result
 
 add(1, 2)

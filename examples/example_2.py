@@ -33,6 +33,9 @@ with code_analyzer as ca:
         result = x + y
         ca.record_dict_for_line_previous({"result": result})
 
+        for i in range(1):
+            x = i
+
         return result
 
     add(1, 2)
