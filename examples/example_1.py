@@ -28,7 +28,6 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()
 code_analyzer.start()
 
-
 def add(x: int, y: int):
     result = x + y
     code_analyzer.record_dict_for_line_previous({"result": result})
@@ -37,6 +36,7 @@ def add(x: int, y: int):
         x = i
 
     return result
+
 
 add(1, 2)
 add(42, 8)

@@ -48,7 +48,14 @@ class Interpretable:
         # Immediately add self to scope_parent
         self.scope_parent.add_interpretable(self)
 
-        # The interpretable type of this object
+        """
+        The interpretable type of this object
+        
+        Notes:
+            This type is very different than a TraceCallResult's Keyword or Event which are both
+            subclasses of InterpretableType
+        
+        """
         self.interpretable_type: Union[constants.InterpretableType, None] = interpretable_type
 
         ##################################################
@@ -139,7 +146,6 @@ class Interpretable:
 
         TODO: Redesign, give who decides what is the primary TraceCallResult to the python code analyzer
 
-
         :return:
         """
         if not self.list_trace_call_result:
@@ -153,12 +159,14 @@ class Interpretable:
 
         if self.interpretable_type == constants.Event.RETURN:
             """
-            Recall that last TraceCallResult has has the event Event.RETURN
+            Recall that last TraceCallResult has has the str_event Event.RETURN
             
             In self._list_trace_call_result_raw by index: 
                 0. TraceCallResult with Event == Line Relative to the inner scope_parent
                 1. TraceCallResult with Event == Return Relative to the inner scope_parent
             """
+
+            # assert len(self.list_trace_call_result) == 2
 
             return self.list_trace_call_result[-1]
 
@@ -172,6 +180,11 @@ class Interpretable:
                 1. TraceCallResult with Event == Call Relative to the inner scope_parent 
                 2. TraceCallResult with Event == Line Relative to the inner scope_parent
             """
+            # print("FUCKCC", self.list_trace_call_result)  # FUCK JOSEPH TEST THIS SHIT IN PY  TESTING
+            # if self.list_trace_call_result[0].get_event() == constants.Event.LINE:
+            #     assert len(self.list_trace_call_result) == 1
+            # else:
+            #     assert len(self.list_trace_call_result) == 3
 
             return self.list_trace_call_result[0]
         elif self.interpretable_type == constants.Event.CALL:
@@ -181,9 +194,12 @@ class Interpretable:
             In self._list_trace_call_result_raw by index:
                 0. TraceCallResult Event == Call
             """
+            # assert len(self.list_trace_call_result) == 1
 
             return self.list_trace_call_result[0]
         elif self.interpretable_type == constants.Event.LINE:
+            # assert len(self.list_trace_call_result) == 1
+
             return self.list_trace_call_result[0]
 
         raise NoTraceCallResult("Primary TraceCallResult could be returned. This exception happened because something "
@@ -232,7 +248,10 @@ class Interpretable:
         :param other:
         :return:
         """
-        return self.__hash__()
+
+        if isinstance(other, Interpretable):
+            return self.__hash__() == other.__hash__()
+        return False
 
     def get_scope_parent(self) -> scope.Scope:
         return self.scope_parent

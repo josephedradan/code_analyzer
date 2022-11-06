@@ -29,6 +29,24 @@ import pytest
 from code_analyzer import CodeAnalyzer
 from code_analyzer.code_analyzer import NoScopeAvailable
 
+def test_code_analyzer_no_code():
+    """
+    Test the analyzer when there is no code to analyze
+
+    Notes:
+        Basically, the code should not crash
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    assert len(code_analyzer.list_interpretable) == 0
+    assert len(code_analyzer.get_list_interpretable()) == 0
+
 
 def test_code_analyzer_basic():
     """
@@ -70,7 +88,7 @@ def test_code_analyzer_basic():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 8
+    assert len(code_analyzer.list_interpretable) == 8
 
 
 def test_code_analyzer_on_a_class():
@@ -96,7 +114,7 @@ def test_code_analyzer_on_a_class():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 3
+    assert len(code_analyzer.list_interpretable) == 3
 
 
 def test_code_analyzer_stop_inner():
@@ -139,7 +157,7 @@ def test_code_analyzer_stop_inner():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 6
+    assert len(code_analyzer.list_interpretable) == 6
 
 
 def test_code_analyzer_deep():
@@ -197,7 +215,7 @@ def test_code_analyzer_deep():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 8
+    assert len(code_analyzer.list_interpretable) == 8
 
 
 def test_code_analyzer_deep_exception_no_scope_available():
@@ -272,7 +290,7 @@ def test_code_analyzer_with():
 
     ca.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 8
+    assert len(code_analyzer.list_interpretable) == 8
 
 
 def test_code_analyzer_with_stop_inner():
@@ -313,7 +331,7 @@ def test_code_analyzer_with_stop_inner():
 
     ca.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 6
+    assert len(code_analyzer.list_interpretable) == 6
 
 
 def test_code_analyzer_with_deep():
@@ -365,7 +383,7 @@ def test_code_analyzer_with_deep():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 8
+    assert len(code_analyzer.list_interpretable) == 8
 
 
 def test_code_analyzer_decorator():
@@ -408,4 +426,4 @@ def test_code_analyzer_decorator():
 
     code_analyzer.print()
 
-    assert len(code_analyzer.list_interpretable_global) == 8
+    assert len(code_analyzer.list_interpretable) == 8

@@ -21,6 +21,7 @@ Tags:
 Reference:
 
 """
+
 from code_analyzer import CodeAnalyzer
 
 code_analyzer = CodeAnalyzer()
@@ -41,7 +42,6 @@ def main():
     add(1, 2)
     add(42, 8)
     add(5, 6)
-    code_analyzer.record_dict_for_line_previous({"This is the last line of code": "But not the last interpretable"})
 
 
 if __name__ == '__main__':

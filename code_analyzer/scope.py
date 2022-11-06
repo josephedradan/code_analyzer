@@ -114,7 +114,13 @@ class Scope:
 
     def get_indent_depth_corrected(self) -> int:
         """
-        Get the indent depth based on the given scope and indent depth offset
+        Get the indent depth based on:
+            Parent Scope indent depth corrected +
+            1 +
+            this object's indent depth offset
+
+        Notes:
+            This indent depth should be used for visual purposes
 
         :return:
         """
@@ -122,6 +128,21 @@ class Scope:
             return 0
 
         return self.scope_parent.get_indent_depth_corrected() + 1 + self.indent_depth_offset
+
+    def get_indent_depth_scope(self) -> int:
+        """
+        Get the scope indent depth:
+            Parent Scope indent depth + 1
+
+        Notes:
+            This is the actual indent depth of this scope
+
+        :return:
+        """
+        if self.scope_parent is None:
+            return 0
+
+        return self.scope_parent.get_indent_depth_scope() + 1
 
     def get_indent_depth_interpretable_first(self) -> int:
         """

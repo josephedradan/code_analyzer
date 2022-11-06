@@ -61,7 +61,7 @@ class TraceCallResult:
 
     def __init__(self,
                  frame: FrameType,
-                 event: str,
+                 str_event: str,
                  arg: str,
                  ):
         """
@@ -70,7 +70,7 @@ class TraceCallResult:
         """
         self.frame: FrameType = frame
 
-        self.event: str = event
+        self.str_event: str = str_event
 
         self.arg: str = arg  # Can be the argument returned from a callable call
 
@@ -150,7 +150,7 @@ class TraceCallResult:
 
         return self.interpretable.scope_parent.get_indent_depth_relative_to_scope(self)
 
-    def get_indent_level_corrected(self) -> int:
+    def get_indent_depth_corrected(self) -> int:
         """
         Indent level relative ot the scope_parent
 
@@ -176,6 +176,7 @@ class TraceCallResult:
         #     )
         # )
         # print("--")
+
         ####################
         # DEBUGGING END
         ####################
@@ -244,25 +245,7 @@ class TraceCallResult:
 
         return int(len(line_spaces) // _PYTHON_INDENT_SPACE_AMOUNT)
 
-    @staticmethod
-    def _get_python_key_word(line: str) -> Union[str, None]:
-        match_1 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN, line)
-        match_2 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN_NO_SPACE, line)
 
-        if match_1 is not None:
-            # print("KEY WORD", match_1)
-            return match_1[0].strip()
-        elif match_2 is not None:
-            # print("KEY WORD", match_2)
-            return match_2[0].strip()
-
-        return None
-
-    def get_python_key_word(self) -> Union[Keyword, None]:
-        if self.python_key_word is None:
-            return None
-
-        return Keyword(self.python_key_word)
 
     def set_indent_depth_offset(self, value: int):
         """
@@ -287,11 +270,14 @@ class TraceCallResult:
         """
 
         result = "{}{}".format(
-            self.get_indent_level_corrected() * _PYTHON_INDENT_SPACE_AMOUNT * ' ',
+            self.get_indent_depth_corrected() * _PYTHON_INDENT_SPACE_AMOUNT * ' ',
             self.code_line_strip,
         )
 
         return result
+
+    def __repr__(self):
+        return self.__str__()
 
     def __hash__(self):
         return hash((self.filename_full, self.code_line_number))
@@ -299,5 +285,25 @@ class TraceCallResult:
     def __eq__(self, other):
         return self.__hash__()
 
+    @staticmethod
+    def _get_python_key_word(line: str) -> Union[str, None]:
+        match_1 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN, line)
+        match_2 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN_NO_SPACE, line)
+
+        if match_1 is not None:
+            # print("KEY WORD", match_1)
+            return match_1[0].strip()
+        elif match_2 is not None:
+            # print("KEY WORD", match_2)
+            return match_2[0].strip()
+
+        return None
+
+    def get_python_key_word(self) -> Union[Keyword, None]:
+        if self.python_key_word is None:
+            return None
+
+        return Keyword(self.python_key_word)
+
     def get_event(self) -> Event:
-        return Event(self.event)
+        return Event(self.str_event)

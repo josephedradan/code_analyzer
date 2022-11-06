@@ -41,7 +41,7 @@ def recursive_call(value: int):
 def function():
     i = 12312
 
-    print("Fuck")  # Random Comment
+    print("Hi")  # Random print
 
     x = 20
 
@@ -184,7 +184,9 @@ def function():
 
     def yee():
         x = 2
-        code_analyzer.record_dict_for_line_previous({"ON return? 2": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"ON x = 2 (1))": "JOSEPH"})
+        code_analyzer.record_dict_for_line_previous({"ON x = 2 (2)": "JOSEPH"})
+        code_analyzer.record_dict_for_line_next({"ON x = 2 (3)": "JOSEPH"})
 
     yee()
 

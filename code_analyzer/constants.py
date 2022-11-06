@@ -92,13 +92,13 @@ class Event(InterpretableType):
     Reference:
         sys.settrace(tracefunc)
             Notes:
-                "Trace functions should have three arguments: frame, event, and arg. frame is the current stack frame.
-                event is a string: 'call', 'line', 'return', 'exception' or 'opcode'. arg depends on the event type."
+                "Trace functions should have three arguments: frame, str_event, and arg. frame is the current stack frame.
+                str_event is a string: 'call', 'line', 'return', 'exception' or 'opcode'. arg depends on the str_event type."
             Reference:
                 https://docs.python.org/3/library/sys.html#sys.settrace
     """
-    RETURN = 'return'  # tracefunc event
-    CALL = 'call'  # tracefunc event
-    LINE = 'line'  # tracefunc event
-    EXCEPTION = 'exception'  # tracefunc event
-    OPCODE = 'opcode'  # tracefunc event
+    RETURN = 'return'  # tracefunc str_event
+    CALL = 'call'  # tracefunc str_event
+    LINE = 'line'  # tracefunc str_event
+    EXCEPTION = 'exception'  # tracefunc str_event
+    OPCODE = 'opcode'  # tracefunc str_event

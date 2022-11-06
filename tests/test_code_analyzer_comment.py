@@ -24,6 +24,7 @@ Reference:
 # import pytest
 from code_analyzer import CodeAnalyzer
 
+
 # def _example_code_comments(code_analyzer: CodeAnalyzer):
 #     def add(x, y):
 #         code_analyzer.record_dict_for_line_next({"result comment 1": "Hello"})
@@ -102,13 +103,34 @@ def test_code_analyzer_comment_next_basic():
     z = x + y
 
     code_analyzer.stop()
-
     code_analyzer.print()
 
     for index, interpretable in enumerate(code_analyzer.get_list_interpretable()):
         dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
 
         assert dict_k_variable_v_value.get(f"Comment {index + 1}") is not None
+
+
+def test_code_analyzer_comment_next_as_last_line_of_code():
+    """
+    Test if record_dict_for_line_next works as the last line of code between the .start() and .stop()
+    calls
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = 2
+    code_analyzer.record_dict_for_line_next({"This should be on x = 2": "Hello"})
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_dict_k_variable_v_value()["This should be on x = 2"] == "Hello"
 
 
 def test_code_analyzer_comment_next_multiple():
@@ -134,7 +156,6 @@ def test_code_analyzer_comment_next_multiple():
     z = x + y
 
     code_analyzer.stop()
-
     code_analyzer.print()
 
     for index, interpretable in enumerate(code_analyzer.get_list_interpretable()):
@@ -162,12 +183,33 @@ def test_code_analyzer_comment_previous_basic():
     code_analyzer.record_dict_for_line_previous({"z": z})
 
     code_analyzer.stop()
-
     code_analyzer.print()
 
     assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("x") == 1
     assert code_analyzer.get_list_interpretable()[1].get_dict_k_variable_v_value().get("y") == 2
     assert code_analyzer.get_list_interpretable()[2].get_dict_k_variable_v_value().get("z") == 3
+
+
+def test_code_analyzer_comment_previous_as_first_line_of_code():
+    """
+    Test if record_dict_for_line_previous works as the first line of code between the .start() and .stop()
+    calls
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    code_analyzer.record_dict_for_line_previous({"This should be on x = 2": "Hello"})
+    x = 2
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_dict_k_variable_v_value()["This should be on x = 2"] == "Hello"
 
 
 def test_code_analyzer_comment_overwrite():
@@ -193,7 +235,6 @@ def test_code_analyzer_comment_overwrite():
     code_analyzer.record_dict_for_line_previous({"Dude": "Cat"})
 
     code_analyzer.stop()
-
     code_analyzer.print()
 
     assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("Hello") == "The"
@@ -201,7 +242,79 @@ def test_code_analyzer_comment_overwrite():
     assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("Dude") == "Cat"
 
 
-def test_code_analyzer_comment_function():
+def test_code_analyzer_comment_next_function_empty():
+    """
+    Test if comments work on functions that are empty using record_dict_for_line_next
+
+    :return:
+    """
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = "hello"
+
+    def do_stuff():
+        code_analyzer.record_dict_for_line_next({'Comment on "do_stuff" call': "Nice"})
+
+    y = "world"
+    do_stuff()
+    z = "yolo"
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value().get('Comment on "do_stuff" call') == "Nice"
+
+def test_code_analyzer_comment_next_function_as_last_line_in_function():
+    """
+    Test if comments work on functions where the record_dict_for_line_next call was made after a actual line of code
+    in the function
+
+    :return:
+    """
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = "hello"
+
+    def do_stuff():
+        dude = 42
+        code_analyzer.record_dict_for_line_next({'Comment on "dude = 42" call': "Nice"})
+
+    y = "world"
+    do_stuff()
+    z = "yolo"
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    assert code_analyzer.get_list_interpretable()[5].get_dict_k_variable_v_value().get('Comment on "dude = 42" call') == "Nice"
+
+def test_code_analyzer_comment_previous_function_empty():
+    """
+    Test if comments work on functions that are empty using record_dict_for_line_previous
+
+    :return:
+    """
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = "hello"
+
+    def do_stuff():
+        code_analyzer.record_dict_for_line_previous({'Comment on "do_stuff" call': "Nice"})
+
+    y = "world"
+    do_stuff()
+    z = "yolo"
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value().get('Comment on "do_stuff" call') == "Nice"
+
+
+def test_code_analyzer_comment_function_advanced():
     """
     Test code_analyzer.record_dict_for_line_previous() and code_analyzer.record_dict_for_line_next() on a function
 
@@ -211,45 +324,50 @@ def test_code_analyzer_comment_function():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_dict_for_line_next({"Comment on add function definition": "Hello"})
+    code_analyzer.record_dict_for_line_next({'Comment on "add" function definition': "Hello"})
 
     def add(x: int, y: int):
-        code_analyzer.record_dict_for_line_previous({"Comment on add function call": "World"})
+        code_analyzer.record_dict_for_line_previous({'Comment on "add" function call': "World"})
 
         result = x + y
-        code_analyzer.record_dict_for_line_previous({"result": result})
+        code_analyzer.record_dict_for_line_previous({'Comment on "result"': result})
 
+        code_analyzer.record_dict_for_line_next({'Comment on "return result"': result})
         return result
 
-    code_analyzer.record_dict_for_line_next({"This should be on result_2 (1)": "Hello World"})
+    code_analyzer.record_dict_for_line_next({'This should be on "result_2" (1)': "Hello World"})
     result_2 = add(2, 3)
-    code_analyzer.record_dict_for_line_previous({"This should be on result_2 (2)": result_2})
+    code_analyzer.record_dict_for_line_previous({'This should be on "result_2" (2)': result_2})
 
     code_analyzer.stop()
-
     code_analyzer.print()
 
     assert (code_analyzer
             .get_list_interpretable()[0]
             .get_dict_k_variable_v_value()
-            .get("Comment on add function definition")) == "Hello"
+            .get('Comment on "add" function definition')) == "Hello"
 
     assert (code_analyzer
             .get_list_interpretable()[1]
             .get_dict_k_variable_v_value()
-            .get("This should be on result_2 (1)")) == "Hello World"
+            .get('This should be on "result_2" (1)')) == "Hello World"
 
     assert (code_analyzer
             .get_list_interpretable()[1]
             .get_dict_k_variable_v_value()
-            .get("This should be on result_2 (2)")) == 5
+            .get('This should be on "result_2" (2)')) == 5
 
     assert (code_analyzer
             .get_list_interpretable()[2]
             .get_dict_k_variable_v_value()
-            .get("Comment on add function call")) == "World"
+            .get('Comment on "add" function call')) == "World"
 
     assert (code_analyzer
             .get_list_interpretable()[3]
             .get_dict_k_variable_v_value()
-            .get("result")) == 5
+            .get('Comment on "result"')) == 5
+
+    assert (code_analyzer
+            .get_list_interpretable()[4]
+            .get_dict_k_variable_v_value()
+            .get('Comment on "return result"')) == 5
