@@ -1,7 +1,7 @@
 # Code Analyser
 
 #### What is this?
-Code to allow you to visually see how your code works when you run it
+A Python code that allows you to visually see how your code works after the execution of your code.
 
 #### Why would you use this?
 Let's say you don't want to use the debugger, and you want to see how your code runs line by line printed out easily
@@ -12,23 +12,35 @@ you will get a simple print analysis of your code in your terminal or in a file.
 
     from code_analyzer import CodeAnalyzer
     
-    code_analyzer = CodeAnalyzer()
+    code_analyzer = CodeAnalyzer()  # Initialize analyzer
     code_analyzer.start()
     
+    # Comment that will be displayed on the next line
+    code_analyzer.record_dict_for_line_next({"Function definition here!": "Wow!"})
     
-    def recursive(depth):
-        code_analyzer.record_dict_for_line_previous({"Depth": depth})
+    
+    def recursive(depth: int) -> int:
+        # Comment that will be displayed on the previous line
+        code_analyzer.record_dict_for_line_previous({"depth": depth})
         if depth <= 0:
+            code_analyzer.record_dict_for_line_next({"Final depth": depth})
             return depth
     
         return recursive(depth - 1)
     
     
+    code_analyzer.record_dict_for_line_next({"This is where the fun begins": "Oh no!"})
     recursive(5)
     
     code_analyzer.stop()
     code_analyzer.print()
-    # code_analyzer.get_code_analyzer_printer().print_debug()
 
 #### Output
 ![example_recursive.png](./images/example_recursive.png)
+
+
+__TODO:__
+- Support code_analyzer.record_str_for_line_next("Hello world")
+- Support code_analyzer.record_str_for_line_previous("Hello world")
+- Support code_analyzer.hide_line_previous(amount)
+- Support code_analyzer.hide_line_next(amount)
