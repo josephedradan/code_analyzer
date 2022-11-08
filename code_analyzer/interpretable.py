@@ -155,7 +155,7 @@ class Interpretable:
 
         trace_call_result_last = self.list_trace_call_result[-1]
 
-        python_key_word = trace_call_result_first.get_python_key_word()
+        python_key_word = trace_call_result_first.get_python_keyword()
 
         if self.interpretable_type == constants.Event.RETURN:
             """

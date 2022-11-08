@@ -30,7 +30,6 @@ with code_analyzer as ca:
     code_analyzer.record_dict_for_line_previous({'This should be on "def add(x: int, y: int)" (1)': "Good code!"})
     code_analyzer.record_dict_for_line_next({'This should be on "def add(x: int, y: int)" (2)': "Good code!"})
 
-
     def add(x: int, y: int):
         code_analyzer.record_dict_for_line_next({"Random Comment": "Good code!"})
         result = x + y
@@ -40,7 +39,6 @@ with code_analyzer as ca:
             x = i
 
         return result
-
 
     add(1, 2)
     add(42, 8)

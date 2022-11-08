@@ -28,7 +28,7 @@ code_analyzer.start()
 
 
 def recursive(depth):
-    # code_analyzer.record_dict_for_line_previous({"Depth": depth})
+    code_analyzer.record_dict_for_line_previous({"Depth": depth})
     if depth <= 0:
         return depth
 
@@ -40,23 +40,4 @@ if True:
 
 code_analyzer.stop()
 code_analyzer.print()
-#
-# def main():
-#     code_analyzer = CodeAnalyzer()
-#     code_analyzer.start()
-#
-#
-#
-#     def recursive(x):
-#         if x <= 0:
-#             return x
-#
-#         return recursive(x -1)
-#
-#     recursive(10)
-#
-#     code_analyzer.stop()
-#     code_analyzer.print()
-#
-# if __name__ == '__main__':
-#     main()
+# code_analyzer.get_code_analyzer_printer().print_debug()

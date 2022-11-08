@@ -299,7 +299,7 @@ class TraceCallResult:
 
         return None
 
-    def get_python_key_word(self) -> Union[Keyword, None]:
+    def get_python_keyword(self) -> Union[Keyword, None]:
         if self.python_key_word is None:
             return None
 

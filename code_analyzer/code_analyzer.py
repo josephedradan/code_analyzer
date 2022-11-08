@@ -368,26 +368,26 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################
 
-            print("-" * 10)
-            print("scope_current:", scope_current)
-            print("scope_current depth:", scope_current.get_indent_depth_scope())
-            print("scope_current.get_interpretable()", scope_current.get_interpretable())
-            print("interpretable_current:", interpretable_current)
-            print("frame:", frame)
-            print("frame.locals:", frame.f_locals)
-            print("str_event:", event)
-            print("self:", self_from_frame_locals)
-            print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
-            _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
-                _trace_call_result_new.code_line_strip,
-                "|||",
-                _trace_call_result_new.str_event)
-            )
-            print("trace_call_result_previous:\n\t{} ||| {}".format(
-                trace_call_result_previous,
-                trace_call_result_previous.str_event if trace_call_result_previous else "")
-            )
+            # print("-" * 10)
+            # print("scope_current:", scope_current)
+            # print("scope_current depth:", scope_current.get_indent_depth_scope())
+            # print("scope_current.get_interpretable()", scope_current.get_interpretable())
+            # print("interpretable_current:", interpretable_current)
+            # print("frame:", frame)
+            # print("frame.locals:", frame.f_locals)
+            # print("str_event:", event)
+            # print("self:", self_from_frame_locals)
+            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            # _trace_call_result_new = TraceCallResult(frame, event, arg, )
+            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+            #     _trace_call_result_new.code_line_strip,
+            #     "|||",
+            #     _trace_call_result_new.str_event)
+            # )
+            # print("trace_call_result_previous:\n\t{} ||| {}".format(
+            #     trace_call_result_previous,
+            #     trace_call_result_previous.str_event if trace_call_result_previous else "")
+            # )
 
             ####################
             # DEBUGGING HEAD END
@@ -606,7 +606,7 @@ class CodeAnalyzer:
                         # Check if both Interpretables are itself (Implies that the scope is the same)
                         if interpretable_current == _interpretable_current_by_scope:
 
-                            if trace_call_result_previous.get_python_key_word() == constants.Keyword.RETURN:
+                            if trace_call_result_previous.get_python_keyword() == constants.Keyword.RETURN:
                                 interpretable_current.set_interpretable_type(constants.Event.RETURN)
 
                         else:
@@ -627,7 +627,7 @@ class CodeAnalyzer:
 
                             _trace_call_result_line = interpretable_current.get_trace_call_result_primary()
 
-                            if _trace_call_result_line.get_python_key_word() == constants.Keyword.RETURN:
+                            if _trace_call_result_line.get_python_keyword() == constants.Keyword.RETURN:
                                 interpretable_current.set_interpretable_type(constants.Event.RETURN)
 
                     """
@@ -642,7 +642,7 @@ class CodeAnalyzer:
                 ####################
                 # Interpretable CLASS
                 ####################
-                elif trace_call_result_new.get_python_key_word() == constants.Keyword.CLASS:
+                elif trace_call_result_new.get_python_keyword() == constants.Keyword.CLASS:
                     """
                     Notes:
                         Note that the 3 TraceCallResult objects past this point all start with the python
@@ -1181,11 +1181,13 @@ class CodeAnalyzer:
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
 
     def print(self):
-
         if self._running:
             raise IllegalCall("Cannot call this function until the stop method is called!")
 
         self.code_analyzer_printer.print()
+
+    def get_code_analyzer_printer(self) -> CodeAnalyzerPrinter:
+        return self.code_analyzer_printer
 
     def get_list_interpretable(self) -> List[Interpretable]:
         return self.list_interpretable
