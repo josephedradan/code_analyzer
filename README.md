@@ -11,26 +11,24 @@ you will get a simple print analysis of your code in your terminal or in a file.
 #### Example?
 
     from code_analyzer import CodeAnalyzer
-
+    
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
     
-    def add(x: int, y: int):
-        result = x + y
-        code_analyzer.record_dict_for_line_previous({"result": result})
     
-        for i in range(1):
-            x = i
+    def recursive(depth):
+        code_analyzer.record_dict_for_line_previous({"Depth": depth})
+        if depth <= 0:
+            return depth
     
-        return result
+        return recursive(depth - 1)
     
     
-    add(1, 2)
-    add(42, 8)
-    add(5, 6)
+    recursive(5)
     
     code_analyzer.stop()
     code_analyzer.print()
+    # code_analyzer.get_code_analyzer_printer().print_debug()
 
 #### Output
 ![example_recursive.png](./images/example_recursive.png)

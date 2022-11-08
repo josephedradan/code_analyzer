@@ -35,8 +35,7 @@ def recursive(depth):
     return recursive(depth - 1)
 
 
-if True:
-    recursive(5)
+recursive(5)
 
 code_analyzer.stop()
 code_analyzer.print()
