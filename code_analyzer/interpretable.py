@@ -21,7 +21,7 @@ Tags:
 Reference:
 
 """
-from typing import Dict, Any, List, Union
+from typing import List, Union
 
 from code_analyzer import constants
 from code_analyzer import scope
@@ -58,6 +58,9 @@ class Interpretable:
         """
         self.interpretable_type: Union[constants.InterpretableType, None] = interpretable_type
 
+        # Whether or not to display this Interpretable.
+        self.visibility: bool = True
+
         ##################################################
         """
         Varying Internal variables
@@ -66,8 +69,11 @@ class Interpretable:
         # All TraceCallResult objects related to this interpretable
         self.list_trace_call_result: List[_trace_call_result.TraceCallResult] = []
 
-        # Recorded "Variable: Value" pairs
-        self.dict_k_variable_v_value: Dict[str, Any] = {}
+        # Dict of "Variable: Value" pairs
+        self.dict_k_variable_v_value: dict = {}
+
+        # List of strings
+        self.list_str: List[str] = []
 
         ##################################################
         """
@@ -122,22 +128,34 @@ class Interpretable:
 
         self.list_trace_call_result.append(trace_call_result)
 
-    def update_dict_k_variable_v_value_through_exhaustable(self, list_dict_k_variable_v_value: List[Dict[str, Any]]):
+    def update_list_comment_through_list(self, list_comment: List[constants.COMMENT]):
         """
-        Loop add dict_k_variable_v_value from a list to self.dict_k_variable_v_value
+        Loop add comment from list to its appropriate container
 
-
-        :param list_dict_k_variable_v_value:
+        :param list_comment:
         :return:
         """
-        while list_dict_k_variable_v_value:
-            self.update_dict_k_variable_v_value(list_dict_k_variable_v_value.pop())
+        while list_comment:
 
-    def update_dict_k_variable_v_value(self, dict_k_variable_v_value: Dict[str, Any]):
+            comment = list_comment.pop()
+
+            if isinstance(comment, dict):
+                self.update_dict_k_variable_v_value(comment)
+
+            elif isinstance(comment, str):
+                self.update_list_str(comment)
+
+    def update_dict_k_variable_v_value(self, dict_k_variable_v_value: dict):
         self.dict_k_variable_v_value.update(dict_k_variable_v_value)
 
-    def get_dict_k_variable_v_value(self) -> Dict[str, Any]:
+    def get_dict_k_variable_v_value(self) -> dict:
         return self.dict_k_variable_v_value
+
+    def update_list_str(self, string: str):
+        self.list_str.append(string)
+
+    def get_list_str(self) -> List[str]:
+        return self.list_str
 
     def get_trace_call_result_primary(self) -> _trace_call_result.TraceCallResult:
         """
@@ -180,7 +198,7 @@ class Interpretable:
                 1. TraceCallResult with Event == Call Relative to the inner scope_parent 
                 2. TraceCallResult with Event == Line Relative to the inner scope_parent
             """
-            # print("FUCKCC", self.list_trace_call_result)  # FUCK JOSEPH TEST THIS SHIT IN PY  TESTING
+            # print_function("FUCKCC", self.list_trace_call_result)  # FUCK JOSEPH TEST THIS SHIT IN PY  TESTING
             # if self.list_trace_call_result[0].get_event() == constants.Event.LINE:
             #     assert len(self.list_trace_call_result) == 1
             # else:
@@ -220,7 +238,7 @@ class Interpretable:
         # DEBUGGING START
         ####################
 
-        # print(f"INDEX LEVEL CORRECTED: {}\nINDEX LEVEL OFFSET: {}\n".format(
+        # print_function(f"INDEX LEVEL CORRECTED: {}\nINDEX LEVEL OFFSET: {}\n".format(
         #     trace_call_result.get_indent_level_corrected(),
         #     self.scope_parent.get_indent_level_first()
         # ))
@@ -235,7 +253,7 @@ class Interpretable:
         """
         Since interpretables are pretty much based on the their primary TraceCallResult object,
         use it's hash. If the above statement is true, the only difference between Interpretable
-        objects will be their self.dict_k_variable_v_value if assigned
+        objects will be their self.dict_k_variable_v_value and self.list_str
 
         :return:
         """
@@ -258,3 +276,9 @@ class Interpretable:
 
     def get_interpretable_type(self) -> Union[constants.InterpretableType, None]:
         return self.interpretable_type
+
+    def set_visibility(self, value: bool):
+        self.visibility = value
+
+    def get_visibility(self) -> bool:
+        return self.visibility

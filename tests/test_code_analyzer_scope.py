@@ -37,7 +37,7 @@ def test_code_analyzer_scope_basic():
     def add(x: int, y: int) -> int:
         result = x + y
 
-        code_analyzer.record_dict_for_line_next({"result": result})
+        code_analyzer.record_comment_for_line_next({"result": result})
 
         return result
 
@@ -71,11 +71,11 @@ def test_code_analyzer_scope_recursive():
 
     def recursive(depth: int) -> int:
         if depth <= 0:
-            code_analyzer.record_dict_for_line_next({"depth": depth})
+            code_analyzer.record_comment_for_line_next({"depth": depth})
 
             return depth
 
-        code_analyzer.record_dict_for_line_next({"depth": depth - 1})
+        code_analyzer.record_comment_for_line_next({"depth": depth - 1})
         return recursive(depth - 1)
 
     recursive(10)
@@ -106,7 +106,7 @@ def test_code_analyzer_scope_complex():
     def add(x: int, y: int) -> int:
         result = x + y
 
-        code_analyzer.record_dict_for_line_next({"result": result})
+        code_analyzer.record_comment_for_line_next({"result": result})
 
         return result
 
@@ -146,11 +146,11 @@ def test_code_analyzer_scope_recursive_complex():
                 if __CONDITION:
                     def recursive(depth: int) -> int:
                         if depth <= 0:
-                            code_analyzer.record_dict_for_line_next({"depth": depth})
+                            code_analyzer.record_comment_for_line_next({"depth": depth})
 
                             return depth
 
-                        code_analyzer.record_dict_for_line_next({"depth": depth - 1})
+                        code_analyzer.record_comment_for_line_next({"depth": depth - 1})
                         return recursive(depth - 1)
 
                     recursive(10)

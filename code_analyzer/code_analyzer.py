@@ -13,10 +13,10 @@ Description:
 Notes:
     Abusing settrace
 
-    Note that The order of a line of code that is a callable by the trace function is
+    *** Note that The order of a line of code that is a callable by the trace function is
         Event Line
         Event Call
-        Event (whatever it is) THEN Actual code execution of what was for the Event Call was
+        Event (whatever it is) Actual code execution of what was for the Event Call was
 
     Note that for EVERY Event "call" there will always be a corresponding Event "return"
     this allows you to keep track of stack depth
@@ -73,8 +73,6 @@ from code_analyzer.interpretable import Interpretable
 from code_analyzer.scope import Scope
 from code_analyzer.trace_call_result import TraceCallResult
 
-PRINT_FORMAT = "{:<16}{:<10}{:<14}{:<14}{:<16}{} {}"
-
 
 class CodeAnalyzer:
     class _Procedure(Enum):
@@ -85,71 +83,12 @@ class CodeAnalyzer:
         STOP = auto()
         ADD_DICT_FOR_INTERPRETABLE_NEXT = auto()
         ADD_DICT_FOR_INTERPRETABLE_PREVIOUS = auto()
+        HIDE_LINE_NEXT = auto()
+        HIDE_LINE_PREVIOUS = auto()
 
     def __init__(self):
         """
         """
-
-        ##################################################
-        """
-        Internal Variables
-        
-        Notes:
-            These variables are special and should not be used or seen outside this object
-        """
-
-        """
-        Scope depth based on if a Event call had this object as its first parameter (This is used to not trace
-        code that this object calls because it's not supposed to 
-        """
-        self.__depth_scope_count_self: int = 0
-
-        # Determine if the code analyzer is _running
-        self._running = False
-
-        ####################
-
-        # List of dicts that will be added to the next interpretable
-        self._list_dict_k_variable_v_value_for_trace_call_result_next: List[Dict[str, Any]] = []
-
-        # List of dicts that will be added to the previous interpretable
-        self._list_dict_k_variable_v_value_for_trace_call_result_previous: List[Dict[str, Any]] = []
-
-        ####################
-
-        """
-        Original trace function that is past the scope containing the called start() method 
-        (This will most likely be restored)
-        
-        """
-        self._trace_function_original: Union[TracebackType, None] = None
-
-        """
-        Original trace function in the scope where the start() method is called (This will most likely be restored)
-        
-        Notes:
-            Note that the location of this trace function is located where the start() method is located 
-        
-        """
-        self._trace_function_original_base: Union[TracebackType, None] = None
-
-        ####################
-
-        # List of custom commands that this object uses to do specific actions
-        self._list_procedure: List[CodeAnalyzer._Procedure] = []
-
-        ####################
-
-        """
-        Very unique condition when one of the below code lines
-            .record_dict_for_line_next(...)
-            OR
-            .record_dict_for_line_previous(...)
-        has their frame's str_event == constants.Event.RETURN.value  
-        
-        This basically means that one of the above code lines was the last line of a callable        
-        """
-        self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
 
         ##################################################
         """
@@ -172,7 +111,6 @@ class CodeAnalyzer:
         self.code_analyzer_printer: CodeAnalyzerPrinter = CodeAnalyzerPrinter(self)
 
         ##################################################
-
         """
         Special case Internal variables
         
@@ -181,6 +119,45 @@ class CodeAnalyzer:
             are doing
         
         """
+
+        # Determine if the code analyzer is running
+        self._running = False
+
+        # If the decorator method of using this application was called
+        self._decorator_used: bool = False
+
+        # If the decorator method needs to execute special code
+        self._decorator_used_do_conditions: bool = False
+
+        """
+        Original trace function that is past the scope containing the called start() method 
+        (This will most likely be restored)
+
+        """
+        self._trace_function_original: Union[TracebackType, None] = None
+
+        """
+        Original trace function in the scope where the start() method is called (This will most likely be restored)
+
+        Notes:
+            Note that the location of this trace function is located where the start() method is located 
+
+        """
+        self._trace_function_original_base: Union[TracebackType, None] = None
+
+        """
+        Scope depth based on if a Event call had this object as its first parameter (This is used to not trace
+        code that this object calls because it's not supposed to 
+        """
+        self.__depth_scope_count_self: int = 0
+
+        ####################
+
+        # List of comments that will be added to the next interpretable
+        self._list_comment_for_trace_call_result_next: List[constants.COMMENT] = []
+
+        # List of comments that will be added to the previous interpretable
+        self._list_comment_for_trace_call_result_previous: List[constants.COMMENT] = []
 
         ####################
         # TraceCallResult stuff
@@ -195,16 +172,23 @@ class CodeAnalyzer:
 
         self._interpretable_current: Union[Interpretable, None] = None
 
+        self._count_interpretable_previous_visibility_false: int = 0
+
+        self._count_interpretable_next_visibility_false: int = 0
+
+        """
+        Notes:
+            Indicate that self._count_interpretable_next_visibility_false was used.
+            This is used to communicate from the previous trace_function_callback call and the
+            current trace_function_callback call.
+        """
+        self._bool_interpretable_next_visibility_false_used: bool = True
+
         ####################
         # Scope stuff
         ####################
 
         self._list_stack_scope: List[Scope] = []
-
-        # Initial scope_parent stuff
-        scope_container_initial: Scope = Scope()
-
-        self._list_stack_scope.append(scope_container_initial)
 
         ####################
         """
@@ -217,13 +201,13 @@ class CodeAnalyzer:
             code_analyzer.start()
             ... # CODE BEING ANALYZED IS HERE
             code_analyzer.stop() 
-            code_analyzer.print()
+            code_analyzer.print_function()
         
         If the index is 2, then the code that should be analyzed probably follows the format below:
             code_analyzer = CodeAnalyzer()
             with code_analyzer as ca:
                 ... # CODE BEING ANALYZED IS HERE
-            code_analyzer.print()
+            code_analyzer.print_function()
         
         """
         self._index_frame_object: Union[int, None] = None
@@ -235,11 +219,23 @@ class CodeAnalyzer:
 
         self._trace_call_result_possible_on_board_event_call_for_class: Union[TraceCallResult, None] = None
 
-        # If the decorator method of using this application was called
-        self._decorator_used: bool = False
+        ####################
 
-        # If the decorator method needs to execute special code
-        self._decorator_used_do_conditions: bool = False
+        # List of custom commands that this object uses to do specific actions
+        self._list_procedure: List[CodeAnalyzer._Procedure] = []
+
+        ####################
+
+        """
+        Very unique condition when one of the below code lines
+            .record_dict_for_line_next(...)
+            OR
+            .record_dict_for_line_previous(...)
+        has their frame's str_event == constants.Event.RETURN.value  
+
+        This basically means that one of the above code lines was the last line of a callable        
+        """
+        self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
 
         ##################################################
         """
@@ -252,6 +248,86 @@ class CodeAnalyzer:
         # This is used to count the amount of times an interpretable has been called
         self.dict_k_interpretable_v_list_interpretable: Dict[Interpretable, list] = defaultdict(list)
 
+        # Line with the longest amount of chars
+        self.length_line_most_chars: int = 0
+
+        # self.trace_call_result_deepest: Union[TraceCallResult, None] = None
+
+    def __reset(self):
+        """
+        Will reset most of the variables of this object so that this object can be used again
+
+        IMPORTANT NOTES:
+            THIS MUST ALWAYS BE CALLED FIRST INSIDE THE .start() CALL
+
+        Notes:
+            Do not reset
+                self._decorator_used
+                self._decorator_used_do_conditions
+                self._index_frame_object
+            because they are modified before the start() call, they will be reset in the
+            stop() call
+
+        :return:
+        """
+        print(self._index_frame_object)
+
+        self.list_interpretable.clear()
+
+        #####
+
+        self._running = False
+        # self._decorator_used = False  # Do not uncomment this, read the "Notes:" above
+        # self._decorator_used_do_conditions = False  # Do not uncomment this, read the "Notes:" above
+
+        #####
+        self._trace_function_original = None
+        self._trace_function_original_base = None
+
+        self.__depth_scope_count_self = 0
+
+        #####
+
+        self._list_comment_for_trace_call_result_next.clear()
+        self._list_comment_for_trace_call_result_previous.clear()
+
+        #####
+
+        self._list_trace_call_result_raw.clear()
+
+        #####
+
+        self._interpretable_current = None
+
+        self._count_interpretable_previous_visibility_false = 0
+        self._count_interpretable_next_visibility_false = 0
+        self._bool_interpretable_next_visibility_false_used = False
+        #####
+
+        self._list_stack_scope.clear()
+
+        #####
+
+        # self._index_frame_object = None  # Do not uncomment this, read the "Notes:" above
+
+        #####
+
+        self._trace_call_result_possible_on_board_event_line_for_class = None
+        self._trace_call_result_possible_on_board_event_call_for_class = None
+
+        #####
+        self._list_procedure.clear()
+
+        #####
+
+        self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
+
+        #####
+
+        self.dict_k_interpretable_v_list_interpretable.clear()
+        self.length_line_most_chars = 0
+        # self.trace_call_result_deepest = None
+
     def __enter__(self):
         """
         Notes:
@@ -262,6 +338,7 @@ class CodeAnalyzer:
 
         :return:
         """
+
         self._index_frame_object = 2
 
         self.start()
@@ -304,6 +381,10 @@ class CodeAnalyzer:
 
         :return:
         """
+        self.__reset()
+
+        # Initialize the first scope
+        self._list_stack_scope.append(Scope())
 
         def trace_function_callback(frame: FrameType, event: str, arg):
             """
@@ -324,6 +405,8 @@ class CodeAnalyzer:
 
             # TODO LOOK AT THIS
             # if not filename_full.is_relative_to(base_dir := Path()):return
+
+            len_list_interpretable_current = len(self.list_interpretable)
 
             """
             Getting the self variable to indicate if the trace function has caught a callable from this object.
@@ -368,23 +451,23 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################
 
-            # print("-" * 10)
-            # print("scope_current:", scope_current)
-            # print("scope_current depth:", scope_current.get_indent_depth_scope())
-            # print("scope_current.get_interpretable()", scope_current.get_interpretable())
-            # print("interpretable_current:", interpretable_current)
-            # print("frame:", frame)
-            # print("frame.locals:", frame.f_locals)
-            # print("str_event:", event)
-            # print("self:", self_from_frame_locals)
-            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            # print_function("-" * 10)
+            # print_function("scope_current:", scope_current)
+            # print_function("scope_current depth:", scope_current.get_indent_depth_scope())
+            # print_function("scope_current.get_interpretable()", scope_current.get_interpretable())
+            # print_function("interpretable_current:", interpretable_current)
+            # print_function("frame:", frame)
+            # print_function("frame.locals:", frame.f_locals)
+            # print_function("str_event:", event)
+            # print_function("self:", self_from_frame_locals)
+            # print_function("self.__depth_scope_count_self:", self.__depth_scope_count_self)
             # _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+            # print_function("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
             #     _trace_call_result_new.code_line_strip,
             #     "|||",
             #     _trace_call_result_new.str_event)
             # )
-            # print("trace_call_result_previous:\n\t{} ||| {}".format(
+            # print_function("trace_call_result_previous:\n\t{} ||| {}".format(
             #     trace_call_result_previous,
             #     trace_call_result_previous.str_event if trace_call_result_previous else "")
             # )
@@ -706,7 +789,7 @@ class CodeAnalyzer:
                 ####################
                 # Interpretable CALL
                 ####################
-                elif trace_call_result_new.get_event() == constants.Event.CALL:  # Notice that the value of the Enum is compared # TODO: CHECK trace_call_result_new.get_event() instead of str_event
+                elif trace_call_result_new.get_event() == constants.Event.CALL:
                     """
                     
                     Notes:
@@ -739,7 +822,8 @@ class CodeAnalyzer:
                     
                     """
                     if self._decorator_used_do_conditions is True:
-                        scope_current.pop_interpretable()  # Note: If you don't print this, then code will work
+                        # Note: When debugging if you don't print_function this, the code will work
+                        scope_current.pop_interpretable()
                     else:
                         self.list_interpretable.append(interpretable_current)
 
@@ -778,24 +862,42 @@ class CodeAnalyzer:
                 """
                 if __bool_event_return_and_record_dict_for_line_call_is_trace_call_result_previous:
                     """
-                    The below will exhaust self._list_dict_k_variable_v_value_for_trace_call_result_next to
+                    The below will exhaust self._list_comment_for_trace_call_result_next to
                     the current interpretable because the current str_event is a return so no new Tnterpretables 
                     and therefore TraceCallResult objects will be made past this point.
                     """
-                    interpretable_current.update_dict_k_variable_v_value_through_exhaustable(
-                        self._list_dict_k_variable_v_value_for_trace_call_result_next
+                    interpretable_current.update_list_comment_through_list(
+                        self._list_comment_for_trace_call_result_next
                     )
 
                 # Standard behavior
                 else:
 
-                    # Exhaust list of dict_k_variable_v_value (The list may be empty)
-                    interpretable_current.update_dict_k_variable_v_value_through_exhaustable(
-                        self._list_dict_k_variable_v_value_for_trace_call_result_next
+                    # Exhaust list of comment (The list may be empty)
+                    interpretable_current.update_list_comment_through_list(
+                        self._list_comment_for_trace_call_result_next
                     )
 
                     # Add the newly created TraceCallResult into _interpretable_current
                     interpretable_current.add_trace_call_result(trace_call_result_new)
+
+                    if self._count_interpretable_next_visibility_false == 0:
+                        self._bool_interpretable_next_visibility_false_used = False
+
+                    """
+                    If a new Interpretable was added to self.list_interpretable and
+                    there is a self._count_interpretable_next_visibility_false > 0
+                    
+                    Notes:
+                        Used to update the visibility for interpretable_current when
+                        a .hide_line_next() was called
+                    """
+                    if (len_list_interpretable_current < len(self.list_interpretable) and
+                            self._count_interpretable_next_visibility_false > 0):
+                        interpretable_current.set_visibility(False)
+
+                        self._count_interpretable_next_visibility_false -= 1
+                        self._bool_interpretable_next_visibility_false_used = True
 
                     """
                     Correct the indent depth for the newly created TraceCallResult
@@ -823,177 +925,236 @@ class CodeAnalyzer:
                     If the decorator method of running this application was used (Part 3)
                     
                     Notes:
+                        Recall that in "If the decorator method of running this application was used (Part 2)",
+                        the Interpretable was already popped from the scope_current and that same Interpretable
+                        was never added to self.list_interpretable so no popping was needed from that list
                         
-                    
+                        This will remove the decorator TraceCallResult and prevent the condition from being
+                        True. 
                     """
                     if self._decorator_used_do_conditions is True:
                         self._list_trace_call_result_raw.pop()
                         self._decorator_used_do_conditions = False
 
-                # Resetter
+                # Set the condition back to False for the next call
                 self._bool_record_dict_for_line_call_is_trace_call_result_previous = False
 
 
             ####################
-            # self from frame.f_locals is "self" as in "this" object
+            # self from frame.f_locals refers to this object
             ####################
+
             elif self_from_frame_locals is self:
+                """
+                Notes:
+                   Recall the order of execution when dealing with a method call of this object:
+                      Example:
+                          ...
+                          code_analyzer.hide_line_previous()
+                          ...
+                      TraceCallResults made:
+                          code_analyzer.hide_line_previous | Event.LINE
+                          def hide_line_previous(self): | Event.CALL  # Will have self
+                          ...
+                      Notes:
+                          Because the TraceCallResult "code_analyzer.hide_line_previous" will make an
+                          Interpretable, it needs to be removed when handling the TraceCallResult
+                          "def hide_line_previous(self):"            #           
+                                
+                """
 
                 # Procedure that must be done if possible
                 _procedure: Union[CodeAnalyzer._Procedure, None] = (
                     self._list_procedure.pop() if self._list_procedure else None
                 )
 
-                # If the method record_dict_for_line_next() was called
-                if _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
-                    """
-                    Process:
-                        1. Pop the previous interpretable that was created from self.list_interpretable 
-                            and scope_current.
-                            Note that the previous TraceCallResult should have been
-                                TraceCallResult with Event == LINE
-                            and should been a
-                                code_analyzer.record_dict_for_line_next()
-                            call which is unrelated to the code being analyzed and therefore will be removed
-                            (which is why it's popped)
-                        2. Get the dict of the variable and its value
-                        3A. If the previous trace_call_result_previous's str_event was a constants.Event.RETURN
-                            (It's probably not possible to get in this route because of )
-                        3A1. Get the top interpretable in the current scope
-                        3A2. If the top interpretable of the current scope does not exist, then get the parent scope's
-                            top interpretable instead
-                        3B. (Standard behavior) Add _dict_k_variable_v_value to update the next interpretable 
-                    """
-
-                    self.list_interpretable.pop()  # 1.
-
-                    _interpretable_popped = scope_current.pop_interpretable()  # 1.
-
-                    _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
-
-                    if trace_call_result_previous.get_event() == constants.Event.RETURN:  # 3A
-
-                        # Previous interpretable from the current scope
-                        _interpretable_top = scope_current.get_interpretable_top()
-
-                        # 3A1. IF NONE LOOK AT THE PARENT SCOPE FOR THE INTERPRETABLE
-                        if _interpretable_top is None:
-                            _scope_parent = scope_current.get_scope_parent()
-
-                            # This interpretable should be the top interpretable of the previous scope
-                            _interpretable_top = _scope_parent.get_interpretable_top()  # Unlikely to be None
-
-                        # 3A2. If the top interpretable exist by now, update its dict
-                        if _interpretable_top is not None:
-                            _interpretable_top.update_dict_k_variable_v_value(
-                                _dict_k_variable_v_value
-                            )
-
-                    # 3B. Standard behavior
-                    else:
-                        self._list_dict_k_variable_v_value_for_trace_call_result_next.append(
-                            _dict_k_variable_v_value)
-
-                    # self._bool_record_dict_for_line_call_is_trace_call_result_previous = True  # Why is this here?
-
-                # If the method record_dict_for_line_previous() was called
-                elif _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
+                if isinstance(_procedure, CodeAnalyzer._Procedure):
                     """
                     Process:
                         1. Pop the previous Interpretable that was created from self.list_interpretable 
                             and scope_current
-                            Note that the previous TraceCallResult should have been
-                                TraceCallResult with Event == LINE
-                            and should been a
-                                .record_dict_for_line_previous(...)
-                            call which is unrelated to the code being analyzed and therefore will be removed
-                            (which is why it's popped)
-                        2. Steal the popped Interpretable's dict_k_variable_v_value and add it to
-                            self.list_dict_k_variable_v_value_for_trace_call_result_next because
-                            this Interpretable is popped and so that dict needs to be moved to the next
-                            Interpretable 
-                        3A. Get the the most recent interpretable added to the current scope
-                            (This is the standard route)
-                        3A1. Get the second most recent interpretable added to the current scope
-                            because the most recent interpretable is the callable's head e.g. "def function():" 
-                            while the second most recent interpretable is the call to that function e.g. "function()"
-                            (This route is only taken when the Event == CALL)
-                        3B. Get the the most recent interpretable added to previous scope if the current scope
-                            has no Interpretables
-                        3B1. If parent scope exists, then use its top Interpretable otherwise move 
-                            self._list_dict_k_variable_v_value_for_trace_call_result_previous into
-                            self._list_dict_k_variable_v_value_for_trace_call_result_next because
-                            self._list_dict_k_variable_v_value_for_trace_call_result_previous will have
-                            nowhere else to be added 
+                            Example 1:
+                                Note that the previous TraceCallResult should have been
+                                    TraceCallResult with Event == LINE
+                                and should been a
+                                    code_analyzer.record_dict_for_line_next()
+                                call which is unrelated to the code being analyzed and therefore will be removed
+                                (which is why it's popped)
+                            Example 2:
+                                Note that the previous TraceCallResult should have been
+                                    TraceCallResult with Event == LINE
+                                and should been a
+                                    .record_dict_for_line_previous(...)
+                                call which is unrelated to the code being analyzed and therefore will be removed
+                                (which is why it's popped)
                             
-                        4. Add self._list_dict_k_variable_v_value_for_trace_call_result_previous
-                            to that interpretable
-                        5. Mark special condition that operation was done
-                         
                     """
+
                     self.list_interpretable.pop()  # 1.
 
-                    """
-                    Event Line Interpretable that is record_dict_for_line_previous()
-                    May have a dict_k_variable_v_value that is from record_dict_for_line_next()
-                    """
                     _interpretable_popped = scope_current.pop_interpretable()  # 1.
 
-                    _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
+                    # Special condition when the _procedure is not HIDE_LINE_NEXT
+                    if _procedure != CodeAnalyzer._Procedure.HIDE_LINE_NEXT:
 
-                    self._list_dict_k_variable_v_value_for_trace_call_result_next.append(
-                        _dict_k_variable_v_value)  # 2.
+                        """
+                        Notes:
+                            The below logic is acceptable because if another HIDE_LINE_NEXT procedure is called 
+                            it will overwrite the previous HIDE_LINE_NEXT procedure's call if it still persists.
+                            
+                            self._bool_interpretable_next_visibility_false_used is checked here because
+                            it communicates from the previous trace_function_callback call that 
+                            self._count_interpretable_next_visibility_false was changed.
+                            
+                            self._bool_interpretable_next_visibility_false_used needs to be here because
+                            recall that the previous interpretable was popped and it may have had its
+                            visibility set to False while self._count_interpretable_next_visibility_false turned
+                            to 0. In this state, self._count_interpretable_next_visibility_false must be incremented
+                            but can't due to self._count_interpretable_next_visibility_false == 0.
+                        """
+                        if (self._count_interpretable_next_visibility_false > 0 or
+                                self._bool_interpretable_next_visibility_false_used):
+                            self._count_interpretable_next_visibility_false += 1
 
-                    # Previous interpretable from the current scope
-                    _interpretable_top = scope_current.get_interpretable_top()  # 3.
+                    # If the method record_dict_for_line_next() was called
+                    if _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
+                        """
+                        Process:
+                            2. Get the dict of the variable and its value
+                            3A. If the previous trace_call_result_previous's str_event was a constants.Event.RETURN
+                                (It's probably not possible to get in this route because of )
+                            3A1. Get the top interpretable in the current scope
+                            3A2. If the top interpretable of the current scope does not exist, then get the parent scope's
+                                top interpretable instead
+                            3B. (Standard behavior) Add _dict_k_variable_v_value to update the next interpretable 
+                        """
 
-                    # 3B. No top Interpretable -> use parent scope's top Interpretable if possible
-                    if _interpretable_top is None:
-                        _scope_parent = scope_current.get_scope_parent()
+                        _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
 
-                        # 3B1. If there is a parent scope
-                        if _scope_parent:
-                            # This interpretable should be the top interpretable of the previous scope
-                            _interpretable_top = _scope_parent.get_interpretable_top()
+                        if trace_call_result_previous.get_event() == constants.Event.RETURN:  # 3A
+
+                            # Previous interpretable from the current scope
+                            _interpretable_top = scope_current.get_interpretable_top()
+
+                            # 3A1. IF NONE LOOK AT THE PARENT SCOPE FOR THE INTERPRETABLE
+                            if _interpretable_top is None:
+                                _scope_parent = scope_current.get_scope_parent()
+
+                                # This interpretable should be the top interpretable of the previous scope
+                                _interpretable_top = _scope_parent.get_interpretable_top()  # Unlikely to be None
+
+                            # 3A2. If the top interpretable exist by now, update its dict
+                            if _interpretable_top is not None:
+                                _interpretable_top.update_dict_k_variable_v_value(
+                                    _dict_k_variable_v_value
+                                )
+
+                        # 3B. Standard behavior
                         else:
-                            self._list_dict_k_variable_v_value_for_trace_call_result_next.extend(
-                                self._list_dict_k_variable_v_value_for_trace_call_result_previous
+                            self._list_comment_for_trace_call_result_next.append(
+                                _dict_k_variable_v_value)
+
+                        # self._bool_record_dict_for_line_call_is_trace_call_result_previous = True  # Why is this here?  # TODO: FIGURE THIS OUT
+
+                    # If the method record_dict_for_line_previous() was called
+                    elif _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
+                        """
+                        Process:
+                            2. Steal the popped Interpretable's comment and add it to
+                                self.list_dict_k_variable_v_value_for_trace_call_result_next because
+                                this Interpretable is popped and so that dict needs to be moved to the next
+                                Interpretable 
+                            3A. Get the the most recent interpretable added to the current scope
+                                (This is the standard route)
+                            3A1. Get the second most recent interpretable added to the current scope
+                                because the most recent interpretable is the callable's head e.g. "def function():" 
+                                while the second most recent interpretable is the call to that function e.g. "function()"
+                                (This route is only taken when the Event == CALL)
+                            3B. Get the the most recent interpretable added to previous scope if the current scope
+                                has no Interpretables
+                            3B1. If parent scope exists, then use its top Interpretable otherwise move 
+                                self._list_comment_for_trace_call_result_previous into
+                                self._list_comment_for_trace_call_result_next because
+                                self._list_comment_for_trace_call_result_previous will have
+                                nowhere else to be added 
+                                
+                            4. Add self._list_comment_for_trace_call_result_previous
+                                to that interpretable
+                             
+                        """
+
+                        """
+                        The Interpretable popped, which has Event.LINE, has a record_dict_for_line_previous()
+                        may have a comment that is from record_dict_for_line_next()
+                        """
+                        _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
+
+                        self._list_comment_for_trace_call_result_next.append(
+                            _dict_k_variable_v_value)  # 2.
+
+                        # Previous interpretable from the current scope
+                        _interpretable_top = scope_current.get_interpretable_top()  # 3.
+
+                        # 3B. No top Interpretable -> use parent scope's top Interpretable if possible
+                        if _interpretable_top is None:
+                            _scope_parent = scope_current.get_scope_parent()
+
+                            # 3B1. If there is a parent scope
+                            if _scope_parent:
+                                # This interpretable should be the top interpretable of the previous scope
+                                _interpretable_top = _scope_parent.get_interpretable_top()
+                            else:
+                                self._list_comment_for_trace_call_result_next.extend(
+                                    self._list_comment_for_trace_call_result_previous
+                                )
+
+                                self._list_comment_for_trace_call_result_previous.clear()
+
+                        # 3A. Top Interpretable exists
+                        else:
+
+                            # This TraceCallResult may have the Event == CALL or not exist at all
+                            _trace_call_result_primary: Union[TraceCallResult, None] = (
+                                _interpretable_top.get_trace_call_result_primary()
                             )
 
-                            self._list_dict_k_variable_v_value_for_trace_call_result_previous.clear()
+                            # 3A1. Top Interpretable's primary TraceCallResult has Event == CALL
+                            if _trace_call_result_primary.get_event() == constants.Event.CALL:
+                                """
+                                The below will select the correct Interpretable  
+                                
+                                Example:
+                                    Code:
+                                        do_something()  
+                                        code_analyzer.record_dict_for_line_previous({"Key": "Value"})
+                                        
+                                    Result:
+                                        do_something()  {"Key": "Value"}
+                                        ...                             
+                                        
+                                """
+                                _interpretable_top = scope_current.get_interpretable(-2)
 
-                    # 3A. Top Interpretable exists
-                    else:
+                        # 4.
+                        if _interpretable_top:
+                            _interpretable_top.update_list_comment_through_list(
+                                self._list_comment_for_trace_call_result_previous
+                            )
 
-                        # This TraceCallResult may have the Event == CALL or not exist at all
-                        _trace_call_result_primary: Union[TraceCallResult, None] = (
-                            _interpretable_top.get_trace_call_result_primary()
-                        )
+                            self._bool_record_dict_for_line_call_is_trace_call_result_previous = True
 
-                        # 3A1. Top Interpretable's primary TraceCallResult has Event == CALL
-                        if _trace_call_result_primary.get_event() == constants.Event.CALL:
-                            """
-                            The below will select the correct Interpretable  
-                            
-                            Example:
-                                Code:
-                                    do_something()  
-                                    code_analyzer.record_dict_for_line_previous({"Key": "Value"})
-                                    
-                                Result:
-                                    do_something()  {"Key": "Value"}
-                                    ...                             
-                                    
-                            """
-                            _interpretable_top = scope_current.get_interpretable(-2)
+                    elif _procedure == CodeAnalyzer._Procedure.HIDE_LINE_NEXT:
+                        pass
 
-                    # 4.
-                    if _interpretable_top:
-                        _interpretable_top.update_dict_k_variable_v_value_through_exhaustable(
-                            self._list_dict_k_variable_v_value_for_trace_call_result_previous
-                        )
+                    elif _procedure == CodeAnalyzer._Procedure.HIDE_LINE_PREVIOUS:
+                        for interpretable in self.list_interpretable[
+                                             len(
+                                                 self.list_interpretable) - self._count_interpretable_previous_visibility_false: len(
+                                                 self.list_interpretable)
+                                             ]:
+                            interpretable.set_visibility(False)
 
-                        self._bool_record_dict_for_line_call_is_trace_call_result_previous = True
+                        self._count_interpretable_previous_visibility_false = 0
 
             ##########
             # Event based specific operations
@@ -1012,8 +1173,8 @@ class CodeAnalyzer:
             # DEBUGGING TAIL START
             ####################
 
-            # print(f"SELF COUNTER: {self.__depth_scope_count_self}")
-            # print("-" * 10)
+            # print_function(f"SELF COUNTER: {self.__depth_scope_count_self}")
+            # print_function("-" * 10)
 
             ####################
             # DEBUGGING TAIL END
@@ -1106,8 +1267,8 @@ class CodeAnalyzer:
                         """
                         Due to _interpretable_top_popped being removed because 
                             1. it's not code that should be analyzed.
-                            2. it possibly has a dict_k_variable_v_value that it shouldn't have.
-                        The dict_k_variable_v_value must be moved to the actual top Interpretable
+                            2. it possibly has a comment that it shouldn't have.
+                        The comment must be moved to the actual top Interpretable
                         """
                         _interpretable_top_actual: Interpretable = self.list_interpretable[-1]
                         _interpretable_top_actual.update_dict_k_variable_v_value(
@@ -1118,13 +1279,13 @@ class CodeAnalyzer:
 
                 if self.list_interpretable:  # Might be empty
                     """
-                    If self._list_dict_k_variable_v_value_for_trace_call_result_next has any
+                    If self._list_comment_for_trace_call_result_next has any
                     dict_k_variable_v_values left over, those dict_k_variable_v_values must added to the
                     top interpretable
                     """
                     _interpretable_top: Interpretable = self.list_interpretable[-1]
-                    _interpretable_top.update_dict_k_variable_v_value_through_exhaustable(
-                        self._list_dict_k_variable_v_value_for_trace_call_result_next
+                    _interpretable_top.update_list_comment_through_list(
+                        self._list_comment_for_trace_call_result_next
                     )
 
             ##########
@@ -1155,30 +1316,49 @@ class CodeAnalyzer:
 
             interpretable.set_anlaysis_info(execution_number_relative, index)
 
-    def record_dict_for_line_next(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
+            #####
+
+            trace_call_result_primary = interpretable.get_trace_call_result_primary()
+
+            length_line = len(str(trace_call_result_primary))
+
+            # Assigning the length of the line with the most chars
+            if length_line > self.length_line_most_chars:
+                self.length_line_most_chars = length_line
+
+    def record_comment_for_line_next(self, comment: Union[constants.COMMENT]) -> None:
         """
         Update update_dict_k_variable_v_value for _interpretable_current by appending the
         dict to a list that will then be exhausted into the next trace_call_result
 
-        :param dict_k_variable_v_value:
+        :param comment:
         :return:
         """
-        self._list_dict_k_variable_v_value_for_trace_call_result_next.append(dict_k_variable_v_value)
+        self._list_comment_for_trace_call_result_next.append(comment)
 
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT)
 
-    def record_dict_for_line_previous(self, dict_k_variable_v_value: Dict[str, Any]) -> None:
+    def record_comment_for_line_previous(self, comment: Union[constants.COMMENT]) -> None:
         """
         Update update_dict_k_variable_v_value for trace_call_result_previous
 
-
-        :param dict_k_variable_v_value:
+        :param comment:
         :return:
         """
 
-        self._list_dict_k_variable_v_value_for_trace_call_result_previous.append(dict_k_variable_v_value)
+        self._list_comment_for_trace_call_result_previous.append(comment)
 
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
+
+    def hide_line_previous(self, amount: Union[int] = 1):
+        self._count_interpretable_previous_visibility_false = amount
+
+        self._list_procedure.append(CodeAnalyzer._Procedure.HIDE_LINE_PREVIOUS)
+
+    def hide_line_next(self, amount: Union[int] = 1):
+        self._count_interpretable_next_visibility_false = amount
+
+        self._list_procedure.append(CodeAnalyzer._Procedure.HIDE_LINE_NEXT)
 
     def print(self):
         if self._running:

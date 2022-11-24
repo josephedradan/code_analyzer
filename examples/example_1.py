@@ -28,9 +28,11 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()
 code_analyzer.start()
 
+
 def add(x: int, y: int):
     result = x + y
-    code_analyzer.record_dict_for_line_previous({"result": result})
+    code_analyzer.record_comment_for_line_previous({"result": result})
+    code_analyzer.record_comment_for_line_previous(f"Result {result}")
 
     for i in range(1):
         x = i

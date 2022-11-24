@@ -14,7 +14,7 @@ Notes:
 
 IMPORTANT NOTES:
 
-    USING print() when using the code analyzer in pytest will print some strange stuff...
+    USING print_function() when using the code analyzer in pytest will print_function some strange stuff...
 
 Explanation:
 
@@ -28,6 +28,7 @@ from typing import Union
 import pytest
 from code_analyzer import CodeAnalyzer
 from code_analyzer.code_analyzer import NoScopeAvailable
+
 
 def test_code_analyzer_no_code():
     """
@@ -427,3 +428,203 @@ def test_code_analyzer_decorator():
     code_analyzer.print()
 
     assert len(code_analyzer.list_interpretable) == 8
+
+
+def test_code_analyzer_hide_line_previous():
+    """
+    Test if .hide_line_previous works
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = 2
+    y = 3
+    code_analyzer.hide_line_previous(2)
+
+    sum_ = x + y
+    for i in range(3):
+        v = 10
+        code_analyzer.hide_line_previous(1)
+        sum_ += v
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_visibility() is False
+    assert _list_interpretable[1].get_visibility() is False
+    assert _list_interpretable[2].get_visibility() is True
+    assert _list_interpretable[3].get_visibility() is True
+    assert _list_interpretable[4].get_visibility() is False
+    assert _list_interpretable[5].get_visibility() is True
+    assert _list_interpretable[6].get_visibility() is True
+    assert _list_interpretable[7].get_visibility() is False
+    assert _list_interpretable[8].get_visibility() is True
+    assert _list_interpretable[9].get_visibility() is True
+    assert _list_interpretable[10].get_visibility() is False
+    assert _list_interpretable[11].get_visibility() is True
+    assert _list_interpretable[12].get_visibility() is True
+
+
+def test_code_analyzer_hide_line_next():
+    """
+    Test if .hide_line_next works
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    code_analyzer.hide_line_next(2)
+    x = 2
+    y = 3
+
+    sum_ = x + y
+    for i in range(3):
+        code_analyzer.hide_line_next(1)
+        v = 10
+        sum_ += v
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_visibility() is False
+    assert _list_interpretable[1].get_visibility() is False
+    assert _list_interpretable[2].get_visibility() is True
+    assert _list_interpretable[3].get_visibility() is True
+    assert _list_interpretable[4].get_visibility() is False
+    assert _list_interpretable[5].get_visibility() is True
+    assert _list_interpretable[6].get_visibility() is True
+    assert _list_interpretable[7].get_visibility() is False
+    assert _list_interpretable[8].get_visibility() is True
+    assert _list_interpretable[9].get_visibility() is True
+    assert _list_interpretable[10].get_visibility() is False
+    assert _list_interpretable[11].get_visibility() is True
+    assert _list_interpretable[12].get_visibility() is True
+
+def test_code_analyzer_hide_line_next_dealing_with_conflicting_method_calls():
+    """
+    Test if .hide_line_next works when there are more CodeAnalyzer object .hide_line_next method calls
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    code_analyzer.hide_line_next(10)
+    a = 1
+    code_analyzer.hide_line_next(2)  # This should over
+    x = 1
+    y = 2
+    z = 3
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_visibility() is False
+    assert _list_interpretable[1].get_visibility() is False
+    assert _list_interpretable[2].get_visibility() is False
+    assert _list_interpretable[3].get_visibility() is True
+
+def test_code_analyzer_hide_line_next_dealing_with_more_method_calls():
+    """
+    Test if .hide_line_next works when there are more CodeAnalyzer object method calls
+
+    :return:
+    """
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    code_analyzer.hide_line_next(2)
+    code_analyzer.record_comment_for_line_previous({"Hello 1": 1})
+    code_analyzer.record_comment_for_line_next({"Hello 2": 2})
+    code_analyzer.record_comment_for_line_next({"Hello 3": 3})
+    x = 1
+    code_analyzer.record_comment_for_line_previous({"Hello 4": 4})
+    code_analyzer.record_comment_for_line_next({"Hello 5": 5})
+    code_analyzer.record_comment_for_line_next({"Hello 6": 6})
+    y = 2
+    code_analyzer.record_comment_for_line_previous({"Hello 7": 7})
+    code_analyzer.record_comment_for_line_next({"Hello 8": 8})
+    code_analyzer.record_comment_for_line_next({"Hello 9": 9})
+    z = 3
+    code_analyzer.record_comment_for_line_previous({"Hello 10": 10})
+
+    code_analyzer.stop()
+    code_analyzer.print()
+
+    _list_interpretable = code_analyzer.get_list_interpretable()
+
+    assert _list_interpretable[0].get_visibility() is False
+    assert _list_interpretable[1].get_visibility() is False
+    assert _list_interpretable[2].get_visibility() is True
+
+
+# def test_code_analyzer_hide_line_previous_advanced():
+#     """
+#
+#     TODO IDK
+#     :return:
+#     """
+#
+#     code_analyzer = CodeAnalyzer()
+#     code_analyzer.start()
+#
+#     _CONDITION = True
+#
+#     def _dec(func):
+#
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             return func(*args, **kwargs)
+#
+#         return wrapper
+#
+#     def recursive(x):
+#         if x < 0:
+#             # print_function(x)
+#             return x
+#         return recursive(x - 1)
+#
+#     if _CONDITION:
+#         if _CONDITION:
+#             if _CONDITION:
+#                 code_analyzer.hide_line_next()
+#                 # @_dec
+#                 # def recursive_2(x):
+#                 #     if x < 0:
+#                 #         # print_function(x)
+#                 #         return x
+#                 #     return recursive_2(x - 1)
+#
+#                 recursive(3)
+#                 # recursive_2(2)
+#
+#     code_analyzer.stop()
+#     code_analyzer.print_function()
+#
+#     _list_interpretable = code_analyzer.get_list_interpretable()
+
+def test_():
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    _CONDITION = True
+    if _CONDITION:
+        if _CONDITION:
+            if _CONDITION:
+                print("Hi")
+
+    code_analyzer.stop()
+    code_analyzer.print()

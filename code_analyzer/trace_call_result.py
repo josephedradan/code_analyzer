@@ -41,7 +41,7 @@ import linecache
 import re
 from pathlib import Path
 from types import FrameType, CodeType
-from typing import Union
+from typing import Union, Tuple
 
 from code_analyzer import interpretable as _interpretable
 from code_analyzer.constants import Event, Keyword
@@ -91,7 +91,7 @@ class TraceCallResult:
         self.filename_full: str = self.frame.f_code.co_filename
 
         self.path_object: Path = Path(self.filename_full)
-        # print("ABS FILE PATH", self.path_object.absolute())
+        # print_function("ABS FILE PATH", self.path_object.absolute())
 
         self.filename_short: str = self.path_object.name
 
@@ -163,9 +163,9 @@ class TraceCallResult:
         # DEBUGGING START
         ####################
 
-        # print("--")
-        # print(self.code_line_strip)
-        # print(
+        # print_function("--")
+        # print_function(self.code_line_strip)
+        # print_function(
         #     "SCOPE INDENT DEPTH CORRECTED: {}\n"
         #     "INDENT DEPTH RELATIVE: {}\n"
         #     "INDENT DEPTH OFFEST: {}\n".format(
@@ -175,7 +175,7 @@ class TraceCallResult:
         #
         #     )
         # )
-        # print("--")
+        # print_function("--")
 
         ####################
         # DEBUGGING END
@@ -245,8 +245,6 @@ class TraceCallResult:
 
         return int(len(line_spaces) // _PYTHON_INDENT_SPACE_AMOUNT)
 
-
-
     def set_indent_depth_offset(self, value: int):
         """
         Set an additional indent level offset
@@ -270,11 +268,20 @@ class TraceCallResult:
         """
 
         result = "{}{}".format(
-            self.get_indent_depth_corrected() * _PYTHON_INDENT_SPACE_AMOUNT * ' ',
-            self.code_line_strip,
+            *self.get_spacing_corrected_and_line()
         )
 
         return result
+
+    def get_spacing_corrected_and_line(self) -> Tuple[str, str]:
+        """
+        Get the corrected spacing and the actual line of code as a tuple
+        :return:
+        """
+        return (
+            self.get_indent_depth_corrected() * _PYTHON_INDENT_SPACE_AMOUNT * ' ',
+            self.code_line_strip
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -291,10 +298,10 @@ class TraceCallResult:
         match_2 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN_NO_SPACE, line)
 
         if match_1 is not None:
-            # print("KEY WORD", match_1)
+            # print_function("KEY WORD", match_1)
             return match_1[0].strip()
         elif match_2 is not None:
-            # print("KEY WORD", match_2)
+            # print_function("KEY WORD", match_2)
             return match_2[0].strip()
 
         return None

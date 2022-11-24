@@ -12,7 +12,7 @@ Description:
 
 Notes:
 
-    Notes for code_analyzer.print():
+    Notes for code_analyzer.print_function():
         Exe Index Rel:  Execution Index Relative to the start()
         Line #:         Line Number in code
         Scope Depth:    Scope depth (How deep the scope is by index, it is based on a function's call)
@@ -67,7 +67,7 @@ def test_code_analyzer_interpretable_recursive():
     code_analyzer.start()
 
     def recursive(depth):
-        code_analyzer.record_dict_for_line_previous({"Depth": depth})
+        code_analyzer.record_comment_for_line_previous({"Depth": depth})
         if depth <= 0:
             return depth
 
