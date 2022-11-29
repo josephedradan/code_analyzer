@@ -25,10 +25,10 @@ Reference:
 
 from __future__ import annotations
 
+import enum
 import os
 import sys
-from enum import Enum
-from typing import List, Union, Callable, Literal, Tuple, Generator
+from typing import List, Union, Callable, Literal, Generator, Any, Dict
 
 import code_analyzer as _code_analyzer
 import colorama
@@ -43,8 +43,6 @@ from rich.text import Text
 
 colorama.init()
 
-PRINT_FORMAT_STR_EXECUTION_ANALYSIS = "{:<16}{:<10}{:<14}{:<14}{:<18}{} {}"
-
 BORDER_SPACE_PRIMARY_KEY = "#"
 BORDER_SPACE_SECONDARY_KEY = "-"
 
@@ -54,59 +52,206 @@ BORDER_SPACE_SECONDARY_AMOUNT = 50
 BORDER_SPACE_PRIMARY = BORDER_SPACE_PRIMARY_KEY * BORDER_SPACE_PRIMARY_AMOUNT
 BORDER_SPACE_SECONDARY = BORDER_SPACE_SECONDARY_KEY * BORDER_SPACE_SECONDARY_AMOUNT
 
-######
+STR_CODE_ANALYSIS_HEADER: str = "{}\n{}\n{}\n".format(BORDER_SPACE_PRIMARY,
+                                                      "*** CODE ANALYSIS ***",
+                                                      BORDER_SPACE_PRIMARY)
 
-TUPLE_HEADER_EXECUTION_ANALYSIS = Tuple[str, str, str, str, str, str]
-TUPLE_INTERPRETABLE_DATA = Tuple[str, str, str, str, str, str, str]
+STR_EXECUTION_ANALYSIS_HEADER: str = "{}\n{}\n{}\n".format(BORDER_SPACE_SECONDARY,
+                                                           "Execution Analysis",
+                                                           BORDER_SPACE_SECONDARY)
+
+STR_LINE_OF_CODE_ANALYSIS_HEADER: str = "{}\n{}\n{}\n".format(BORDER_SPACE_SECONDARY,
+                                                              "Line of code Analysis",
+                                                              BORDER_SPACE_SECONDARY)
+
+RICH_SYNTAX_THEME = "monokai"
+RICH_SYNTAX_LEXER = "python"
 
 
-class DataContainerInterpretable:
+##########
+
+class Attribute(enum.Enum):
+    EXECUTION_INDEX = enum.auto()
+    LINE_NUMBER = enum.auto()
+    INDENT_DEPTH_BY_SCOPE = enum.auto()
+    INDENT_DEPTH = enum.auto()
+    EXECUTION_COUNT = enum.auto()
+    CODE_SPACING = enum.auto()
+    CODE = enum.auto()
+    DICT_K_VARIABLE_V_VALUE = enum.auto()
+    LIST_STR_COMMENT = enum.auto()
+
+    ##########
+    FILENAME_FULL = enum.auto()
+    CALL_COUNT = enum.auto()
+
+
+class ContainerMapping:
+
+    def __init__(self,
+                 name: str,
+                 str_format: str,
+                 ):
+        self.name: str = name
+        self.str_format: str = str_format
+
+
+DICT_K_ATTRIBUTE_V_DATA = Dict[Attribute, Any]
+
+DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping] = {
+
+    # ----- Pre Code -----
+    Attribute.EXECUTION_INDEX: ContainerMapping(
+        "Execution Index",
+        "{:<16}",
+    ),
+    Attribute.LINE_NUMBER: ContainerMapping(
+        "Line #",
+        "{:<10}"
+    ),
+    Attribute.INDENT_DEPTH_BY_SCOPE: ContainerMapping(
+        "Scope depth",
+        "{:<14}"
+    ),
+    Attribute.INDENT_DEPTH: ContainerMapping(
+        "Indent depth",
+        "{:<14}"
+    ),
+    Attribute.EXECUTION_COUNT: ContainerMapping(
+        "Execution Count",
+        "{:<18}"
+    ),
+    Attribute.CODE_SPACING: ContainerMapping(
+        "",
+        "{}"
+    ),
+
+    # ----- Code -----
+    Attribute.CODE: ContainerMapping(
+        "Code",
+        "{}"
+    ),
+
+    # ----- Post Code -----
+    Attribute.DICT_K_VARIABLE_V_VALUE: ContainerMapping(
+        "{Variable: Value}",
+        " {}"
+    ),
+    Attribute.LIST_STR_COMMENT: ContainerMapping(
+        "[Comment]",
+        " {}"
+    ),
+
+    ####################
+
+    Attribute.FILENAME_FULL: ContainerMapping(
+        "Filename",
+        "{}"
+    ),
+    Attribute.CALL_COUNT: ContainerMapping(
+        "Call Count",
+        "{}"
+    )
+}
+
+
+def get_str_dict_interpretable_data(dict_interpretable_data: DICT_K_ATTRIBUTE_V_DATA) -> str:
     """
-    A struct
+    Notes:
+        Assumes that the dict is ordered so python>=3.6 is required
 
+        Given dict_interpretable_data, use DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE to get the format called F
+        using the KEY from dict_interpretable_data, then use F to format the VALUE from dict_interpretable_data
+
+    References:
+        Are dictionaries ordered in Python 3.6+?
+            Reference:
+                https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
+
+        Converting dict to OrderedDict
+            Reference:
+                https://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
+
+        class typing.OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+            Notes:
+                typing.OrderedDict came in at python==3.7.2 so can't type hint OrderedDict when wanting to support
+                lower versions of python.
+
+            Joseph Notes:
+                dicts before python==3.6 are unordered, OrderedDict is supported in python versions lower than 3.6,
+                Type hinting for OrderedDict is supported in 3.7.2. Therefore I will not support python<=3.6
+
+            Reference:
+                https://docs.python.org/3/library/typing.html#typing.OrderedDict
+
+
+    :param dict_interpretable_data:
+    :return:
     """
+
+    str_ = "".join([
+        DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[key].str_format.format(value) for key, value in
+        dict_interpretable_data.items()
+    ])
+
+    return str_
+
+
+##########
+
+class DataIntermediateInterpretable:
 
     def __init__(self, interpretable: Interpretable):
+        super().__init__()
         self.interpretable = interpretable
 
         #####
 
-        self.execution_index_relative = self.interpretable.get_execution_index_relative()
+        self.execution_index_relative: int = self.interpretable.get_execution_index_relative()
 
         self.trace_call_result: TraceCallResult = self.interpretable.get_trace_call_result_primary()
+
+        self.filename_full: str = self.trace_call_result.filename_full
 
         self.line_number: int = self.trace_call_result.get_code_line_number()
 
         self.indent_depth_by_scope: int = self.interpretable.get_scope_parent().get_indent_depth_scope()
 
-        self.indent_level: int = self.trace_call_result.get_indent_depth_corrected()
+        self.indent_depth: int = self.trace_call_result.get_indent_depth_corrected()
 
-        self.spacing: int
+        self.execution_count = self.interpretable.get_execution_count()
+
+        self.code_spacing: int
         self.code: int
-        self.spacing, self.code = self.trace_call_result.get_spacing_corrected_and_line()
+        self.code_spacing, self.code = self.trace_call_result.get_spacing_corrected_and_line()
 
         self.dict_k_variable_v_value: dict = interpretable.get_dict_k_variable_v_value()
 
-        self.str_dict_k_variable_v_value: str = (
-            str(self.dict_k_variable_v_value) if self.dict_k_variable_v_value else ""
-        )
+        self.list_str_comment = self.interpretable.get_list_str_comment()
 
-        self.list_str_comment = self.interpretable.get_list_str()
+        #####
 
-        self.str_list_str_comment = str(self.list_str_comment) if self.list_str_comment else ""
+    def get_dict(self) -> DICT_K_ATTRIBUTE_V_DATA:
+        """
+        Initialize the starting key value pairs in the dict
+
+        :return:
+        """
+        return {
+            Attribute.EXECUTION_INDEX: self.execution_index_relative,
+            Attribute.LINE_NUMBER: self.line_number,
+            Attribute.INDENT_DEPTH_BY_SCOPE: self.indent_depth_by_scope,
+            Attribute.INDENT_DEPTH: self.indent_depth,
+            Attribute.EXECUTION_COUNT: self.execution_count,
+            Attribute.CODE_SPACING: self.code_spacing,
+            Attribute.CODE: self.code,
+            Attribute.DICT_K_VARIABLE_V_VALUE: self.dict_k_variable_v_value,
+            Attribute.LIST_STR_COMMENT: self.list_str_comment,
+            Attribute.FILENAME_FULL: self.filename_full
+        }
 
 
-    def get_tuple_interpretable_data(self) -> TUPLE_INTERPRETABLE_DATA:
-
-        return ( interpretable.get_execution_index_relative(),
-                 line_number,
-                 indent_depth_by_scope,
-                 indent_level,
-                 interpretable.get_execution_count(),
-                 code,
-                 dict_k_variable_v_value, )
-
-class Style(Enum):
+class Style(enum.Enum):
     COLORAMA = "colorama"
     RICH = "rich"
 
@@ -132,11 +277,66 @@ class CodeAnalyzerPrinter:
     def __init__(self, code_analyzer: _code_analyzer.CodeAnalyzer):
         self.code_analyzer: _code_analyzer.CodeAnalyzer = code_analyzer
 
-        self.console = Console(
-            soft_wrap=True,
-            record=True,
+    @staticmethod
+    def _get_list_attribute_allowed_execution_analysis() -> List[Attribute]:
+        """
+        Notes:
+            Commenting out a value line will automatically be reflected in the table
 
-        )
+        :return:
+        """
+        list_attribute = [
+            Attribute.EXECUTION_INDEX,
+            Attribute.LINE_NUMBER,
+            Attribute.INDENT_DEPTH_BY_SCOPE,
+            Attribute.INDENT_DEPTH,
+            Attribute.EXECUTION_COUNT,
+            Attribute.CODE_SPACING,
+            Attribute.CODE,
+            Attribute.DICT_K_VARIABLE_V_VALUE,
+            Attribute.LIST_STR_COMMENT,
+        ]
+
+        return list_attribute
+
+    @staticmethod
+    def _get_list_attribute_allowed_line_of_code_analysis() -> List[Attribute]:
+        """
+        Notes:
+            Commenting out a value line will automatically be reflected in the table
+
+        :return:
+        """
+        list_attribute = [
+            Attribute.EXECUTION_INDEX,
+            # Attribute.LINE_NUMBER,
+            Attribute.INDENT_DEPTH_BY_SCOPE,
+            # Attribute.INDENT_DEPTH,
+            Attribute.EXECUTION_COUNT,
+            # Attribute.CODE_SPACING,
+            # Attribute.CODE,
+            Attribute.DICT_K_VARIABLE_V_VALUE,
+            Attribute.LIST_STR_COMMENT,
+        ]
+
+        return list_attribute
+
+    @staticmethod
+    def _get_list_attribute_allowed_line_of_code_analysis_shared() -> List[Attribute]:
+        """
+        Notes:
+            Commenting out a value line will automatically be reflected in the table
+
+        :return:
+        """
+        list_attribute = [
+            Attribute.FILENAME_FULL,
+            Attribute.LINE_NUMBER,
+            Attribute.CODE,
+            Attribute.CALL_COUNT,
+        ]
+
+        return list_attribute
 
     def print(self, print_function: Callable = print, style: STYLES = Style.COLORAMA):
         """
@@ -144,7 +344,7 @@ class CodeAnalyzerPrinter:
         :param print_function:
         :return:
         """
-        header = "{}\n{}\n{}\n".format(BORDER_SPACE_PRIMARY, "*** CODE ANALYSIS ***", BORDER_SPACE_PRIMARY)
+        header = STR_CODE_ANALYSIS_HEADER
 
         str_full = "{}\n{}\n\n{}".format(
             header,
@@ -154,47 +354,95 @@ class CodeAnalyzerPrinter:
 
         print_function(str_full)
 
-        x = Text("This aa")
-        x.stylize("red")
-        z = Text("FFF") + x
-        z.stylize("blue")
+    def print_rich(self, console: Union[Console, None] = None):
 
-        # self.console.print(z)
-        #
-        # self.console.log("[red]This[/]")
-        # self.console.print("[red]This[/]")
-        # self.console.print("[blue underline]Looks like a link")
+        if console is None:
+            # Note: Writing to a file will only have plain text
+            console = Console(
+                soft_wrap=True,
+                # record=True,
+            )
 
-    def print_rich(self):
+        console.print(STR_CODE_ANALYSIS_HEADER)
+        self._do_rich_execution_analysis(console)
+        self._do_rich_line_of_code_analysis(console)
+
+    def _do_rich_execution_analysis(self, console: Console):
+
+        console.print(STR_EXECUTION_ANALYSIS_HEADER)
+
+        dict_k_attribute_v_attribute_name = {
+            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
+            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+        }
+
+        _bool_code_exists = dict_k_attribute_v_attribute_name.get(Attribute.CODE, None) is not None
 
         table = Table(
-            title="DATA YA",
+            # title=STR_EXECUTION_ANALYSIS_HEADER,
             expand=True,
-            # width=500
+            width=self.code_analyzer.length_line_most_chars_with_comments + len(
+                "".join(dict_k_attribute_v_attribute_name.values()))
         )
-        for i, column_name in enumerate(self._get_data_execution_analysis_column_names()):
-            table.add_column(
-                column_name,
-                no_wrap=True,
+
+        if _bool_code_exists:
+
+            _str_dict = ""
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                _str_dict = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                    Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].name
+                )
+
+            _str_list = ""
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                _str_list = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                    Attribute.LIST_STR_COMMENT].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].name
+                )
+
+            dict_k_attribute_v_attribute_name[Attribute.CODE] = "{}{}{}".format(
+                DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.CODE].name,
+                _str_dict,
+                _str_list
             )
+
+        for attribute, attribute_name in dict_k_attribute_v_attribute_name.items():
+
+            if _bool_code_exists and (
+                    attribute == Attribute.CODE_SPACING or
+                    attribute == Attribute.DICT_K_VARIABLE_V_VALUE or
+                    attribute == Attribute.LIST_STR_COMMENT):
+                pass
+            elif attribute == Attribute.CODE_SPACING:
+                # Never have a column for code spacing because it's empty
+                pass
+            elif attribute == Attribute.CODE:
+                table.add_column(
+                    dict_k_attribute_v_attribute_name[attribute],
+                    no_wrap=True,
+                    width=self.code_analyzer.length_line_most_chars_with_comments,
+                    header_style="bold"
+                )
+            else:
+                table.add_column(
+                    dict_k_attribute_v_attribute_name[attribute],
+                    no_wrap=True,
+                    header_style="bold"
+                )
 
             # Doesn't work as intended
             # if i == 5:
             #     table.add_column(
-            #         column_name,
+            #         attribute_name,
             #         no_wrap=True,
             #         style=Syntax.get_theme("python").get_style_for_token()
             #     )
             # else:
             #     table.add_column(
-            #         column_name,
+            #         attribute_name,
             #         no_wrap=True,
             #     )
-
-        # list_row: Generator[TUPLE_INTERPRETABLE_DATA] = (
-        #     _get_data_execution_analysis_interpretable(interpretable, None) for interpretable in
-        #     self.code_analyzer.list_interpretable if interpretable.visibility is True
-        # )
 
         for interpretable in self.code_analyzer.list_interpretable:
 
@@ -203,91 +451,193 @@ class CodeAnalyzerPrinter:
 
             trace_call_result = interpretable.get_trace_call_result_primary()
 
-            data_container_interpretable = DataContainerInterpretable(interpretable)
+            dict_k_attribute_v_data = DataIntermediateInterpretable(interpretable).get_dict()
+
+            dict_k_attribute_v_data_filtered = {k: v for k, v in dict_k_attribute_v_data.items() if
+                                                k in dict_k_attribute_v_attribute_name}
 
             """
             Notes:
-                what the variable "list_str_data" contains can be found at the function
-                self._get_data_execution_analysis_column_names 
-                
+                Rich styling:
+                    Styles for "style" can be found at https://rich.readthedocs.io/en/stable/style.html 
+                    Colors for "style" can be found at https://rich.readthedocs.io/en/stable/appendix/colors.html
+            """
+            if dict_k_attribute_v_data_filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                # Removes empty dict string
+                dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] = (
+                    dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] if
+                    dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] else ""
+                )
+
+                dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE]: Text = Text(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
+                        dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE]),
+                    style="rgb(255,0,0)",  # Red
+                    # style="dark_orange",
+                )
+
+            if dict_k_attribute_v_data_filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                # Removes empty list string
+                dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] = (
+                    dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] if
+                    dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] else ""
+                )
+
+                dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT]: Text = Text(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].str_format.format(
+                        dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT]),
+                    # style="rgb(255,0,0)",  # Red
+                    style="dark_orange",
+                )
+
+            if (dict_k_attribute_v_data_filtered.get(Attribute.CODE_SPACING, None) is not None and
+                    dict_k_attribute_v_data_filtered.get(Attribute.CODE, None) is not None and
+                    _bool_code_exists):
+                r"""
                 Notes:
-                    list_str_data[0]  # 
-                    list_str_data[1]
-                    list_str_data[2]
-                    list_str_data[3]
-                    list_str_data[4]
-                    list_str_data[5]
-            """
-            # Force all items to string or rich won't work
-            list_str_data = [str(item) for item in data_container_interpretable]
+                    Themes:
+                        Possible themes for "theme" can be found at:
+                            .../Lib/site-packages/rich/syntax.py
+                        Look for the dict STYLE_MAP
 
-            _str_dict_k_variable_v_value = list_str_data.pop()
+                        To see the style go to https://pygments.org/styles/
 
-            if _str_dict_k_variable_v_value:
-                _str_dict_k_variable_v_value = "  {}".format(_str_dict_k_variable_v_value)
+                        Example:
+                            theme="native"
+                            theme="monokai"  # Which is the default
 
-            """
-            Notes:
-                Styles for "style" can be found at https://rich.readthedocs.io/en/stable/style.html 
-                Colors for "style" can be found at https://rich.readthedocs.io/en/stable/appendix/colors.html
-            """
-            _str_dict_k_variable_v_value_styled = Text(
-                _str_dict_k_variable_v_value,
-                style="rgb(255,0,0)",  # Red
-                # style="dark_orange",
+                    The first arg in Syntax(...) is ignored when using highlight and there
+                    is no official documentation for highlight online. 
+                """
+
+                text_code_spacing: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
+                    dict_k_attribute_v_data_filtered[Attribute.CODE_SPACING]
+                )
+
+                # *** THE ONLY WAY TO REMOVE THE NEWLINE AND NOT THE SPACES ***
+                text_code_spacing = text_code_spacing.split()[0]
+
+                dict_k_attribute_v_data_filtered.pop(Attribute.CODE_SPACING)
+
+                text_code: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
+                    dict_k_attribute_v_data_filtered[Attribute.CODE]
+                )
+
+                text_code.rstrip()  # Removes newline that somehow exists
+
+                ##########
+
+                # Function definition
+                if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
+                        trace_call_result.get_event() == constants.Event.LINE):
+                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
+
+                # Function call
+                elif (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
+                      trace_call_result.get_event() == constants.Event.CALL):
+                    text_code.stylize("on rgb(0,95,0)")  # dark_green
+
+                # Class definition
+                elif (trace_call_result.get_python_keyword() == constants.Keyword.CLASS and
+                      trace_call_result.get_event() == constants.Event.LINE):
+                    # text_code.stylize("on rgb(175,0,215)")  # dark_violet
+                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
+
+                # Fallback color for all Event.CALL
+                elif trace_call_result.get_event() == constants.Event.CALL:
+                    text_code.stylize("on rgb(0,95,0)")  # dark_green
+
+                ##########
+
+                text_code_spacing.append_text(text_code)
+
+                if dict_k_attribute_v_data_filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                    text_code_spacing.append_text(dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE])
+
+                    dict_k_attribute_v_data_filtered.pop(Attribute.DICT_K_VARIABLE_V_VALUE)
+
+                if dict_k_attribute_v_data_filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                    text_code_spacing.append_text(dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT])
+
+                    dict_k_attribute_v_data_filtered.pop(Attribute.LIST_STR_COMMENT)
+
+                dict_k_attribute_v_data_filtered[Attribute.CODE] = text_code_spacing
+
+                # print(f"{text_code_spacing.markup=}")  # DEBUGGING: Check what the markup is
+
+            list_data: List[str] = [(str(data) if isinstance(data, int) else data)
+                                    for data in dict_k_attribute_v_data_filtered.values()]
+
+            table.add_row(*list_data)
+
+            # DEBUGGING: If the width of the table is too big, then it will reset the console's width to 79
+            # print(f"{self.console.size=}")
+
+        console.print(table)
+
+    def _do_rich_line_of_code_analysis(self, console: Console):
+        console.print(STR_LINE_OF_CODE_ANALYSIS_HEADER)
+
+
+
+        for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
+            table_shared = Table(
+                expand=True,
+                width=self.code_analyzer.length_line_most_chars_with_comments
             )
 
-            self.console.print(_str_dict_k_variable_v_value_styled)
+            table_shared.add_column("Name")
+            table_shared.add_column("Value")
 
-            r"""
-            Notes:
-                Themes:
-                    Possible themes for "theme" can be found at:
-                        .../Lib/site-packages/rich/syntax.py
-                    Look for the dict STYLE_MAP
-                    
-                    To see the style go to https://pygments.org/styles/
-                    
-                    Example:
-                        theme="native"
-                        theme="monokai"  # Which is the default
-                
-                The first arg in Syntax(...) is ignored when using highlight and there
-                is no official documentation for highlight online. 
-            """
-            line: Text = Syntax("", lexer="python", theme="monokai").highlight(list_str_data[5])
-            line.rstrip()
+            ########################
 
-            ##########
+            trace_call_result = interpretable.get_trace_call_result_primary()
 
-            if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
-                    trace_call_result.get_event() == constants.Event.LINE):
-                line.stylize("on rgb(0,0,135)")  # Dark blue
+            line_of_code = trace_call_result.code_line_strip
 
-            elif (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
-                  trace_call_result.get_event() == constants.Event.CALL):
-                line.stylize("on rgb(0,95,0)")  # Dark green
+            count = len(list_interpretable)
 
-            elif (trace_call_result.get_python_keyword() == constants.Keyword.CLASS and
-                  trace_call_result.get_event() == constants.Event.LINE):
-                line.stylize("on rgb(0,175,135)")  # Dark cyan
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis_shared():
 
-            # Fallback color for all Event.CALL
-            elif trace_call_result.get_event() == constants.Event.CALL:
-                line.stylize("on rgb(0,95,0)")  # Dark green
+                key = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name
 
-            ##########
+                value = DataIntermediateInterpretable(interpretable).get_dict().get(attribute)
 
-            line.append(_str_dict_k_variable_v_value_styled)
+                # Stuff that can't be found in a DataIntermediateInterpretable's dict
+                if attribute == Attribute.CALL_COUNT:
+                    value = count
 
-            list_str_data[5] = line  # Recall that list_str_data[5] is the code with no style
+                table_shared.add_row(str(key), str(value))
 
-            self.console.print(list_str_data[5])
-            table.add_row(*list_str_data)
-            self.console.print("FUCK", self.console.size)
+            console.print(table_shared)
 
-        self.console.print(table)
-        self.console.save_html("tet.html")
+            ########################
+
+            table_body = Table(
+                expand=True,
+                width=self.code_analyzer.length_line_most_chars_with_comments
+
+            )
+
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis():
+                table_body.add_column(DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name)
+
+            for interpretable_inner in list_interpretable:
+
+                data_intermediate_interpretable = DataIntermediateInterpretable(interpretable_inner)
+
+                dict_data_intermediate_interpretable =data_intermediate_interpretable.get_dict()
+
+                list_data = [str(dict_data_intermediate_interpretable.get(attribute)) for attribute in
+                             self._get_list_attribute_allowed_line_of_code_analysis()]
+
+                table_body.add_row(*list_data)
+
+            console.print(table_body)
+            console.print("\n")
+
+
+
 
     def print_debug(self):
         """
@@ -303,33 +653,48 @@ class CodeAnalyzerPrinter:
                 print(_tra, _tra.get_event())
             print()
 
-    def _get_data_execution_analysis_column_names(self) -> TUPLE_HEADER_EXECUTION_ANALYSIS:
-
-        column_names = ("Execution Index",
-                        "Line #",
-                        "Scope depth",
-                        "Indent depth",
-                        "Execution Count",
-                        "Code + {Variable: Value}")
-
-        return column_names
-
     def get_str_execution_analysis(self, style: STYLES = None) -> str:
 
-        str_header_main: str = "{}\n{}\n{}\n".format(BORDER_SPACE_SECONDARY, "Execution Analysis",
-                                                     BORDER_SPACE_SECONDARY)
+        str_header_main = STR_EXECUTION_ANALYSIS_HEADER
 
-        str_column_names: str = _get_str_execution_analysis(*self._get_data_execution_analysis_column_names(), "")
+        dict_k_attribute_v_attribute_name = {
+            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
+            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+        }
 
-        generator_row: Generator[str] = (
-            _get_str_execution_analysis_interpretable(interpretable, style) for
-            interpretable in self.code_analyzer.list_interpretable if interpretable.visibility is True
+        str_column_names: str = get_str_dict_interpretable_data(dict_k_attribute_v_attribute_name)
+
+        def get_str_row_interpretable(interpretable: Interpretable) -> str:
+            nonlocal dict_k_attribute_v_attribute_name
+            nonlocal style
+
+            dict_k_attribute_v_data = DataIntermediateInterpretable(interpretable).get_dict()
+
+            # Dict with allowed columns based on what exists in dict_k_attribute_v_attribute_name
+            dict_k_attribute_v_data_filtered = {
+                k: v for k, v in dict_k_attribute_v_data.items() if
+                dict_k_attribute_v_attribute_name
+            }
+
+            dict_k_attribute_v_data_styled = _get_dict_interpretable_data_styled(
+                interpretable,
+                dict_k_attribute_v_data_filtered,
+                style,
+            )
+
+            string = get_str_dict_interpretable_data(dict_k_attribute_v_data_styled)
+
+            return string
+
+        generator_str_row_interpretable: Generator[str] = (
+            get_str_row_interpretable(interpretable) for interpretable in self.code_analyzer.list_interpretable
+            if interpretable.visibility is True
         )
 
         str_full = "{}\n{}\n{}".format(
             str_header_main,
             str_column_names,
-            "\n".join(generator_row)
+            "\n".join(generator_str_row_interpretable)
         )
 
         return str_full
@@ -342,67 +707,78 @@ class CodeAnalyzerPrinter:
             are grouped by .get_trace_call_result_primary call's
         :return:
         """
-        str_header: str = "{}\n{}\n{}\n".format(BORDER_SPACE_SECONDARY, "Line of code Analysis", BORDER_SPACE_SECONDARY)
+        str_header = STR_LINE_OF_CODE_ANALYSIS_HEADER
 
         list_str_information_full: List[str] = []
 
         for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
             trace_call_result = interpretable.get_trace_call_result_primary()
 
-            line_of_code = trace_call_result.code_line_strip
-
-            filename_full = trace_call_result.filename_full
-
-            line_number = trace_call_result.get_code_line_number()
-
             count = len(list_interpretable)
 
-            # WARNING: dict_k_variable_v_value VARIES PER INTERPRETABLE, BUT
+            # WARNING: dict_k_variable_v_value VARIES PER INTERPRETABLE, DON'T USE THIS
             dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
 
-            _filename_full_header = "File: "
-            _line_number_header = "Line number: "
-            _line_of_code_header = "Line of Code: "
-            _line_of_code_body = line_of_code
-            _count_header = "Count: "
+            dict_shared = {}
 
-            if style == Style.COLORAMA:
-                _filename_full_header = colorama.Fore.MAGENTA + _filename_full_header + colorama.Style.RESET_ALL
-                _line_of_code_header = colorama.Fore.GREEN + _line_of_code_header + colorama.Style.RESET_ALL
-                _line_of_code_body = colorama.Fore.RED + line_of_code + colorama.Style.RESET_ALL
-                _count_header = colorama.Fore.BLUE + _count_header + colorama.Style.RESET_ALL
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis_shared():
 
-            str_header_body = "{}{}\n{}{}\n{}{}\n{}{}".format(
-                _filename_full_header,
-                filename_full,
-                _line_number_header,
-                line_number,
-                _line_of_code_header,
-                _line_of_code_body,
-                _count_header,
-                count,
-            )
+                key = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name
+
+                value = DataIntermediateInterpretable(interpretable).get_dict().get(attribute)
+
+                # Stuff that can't be found in a DataIntermediateInterpretable's dict
+                if attribute == Attribute.CALL_COUNT:
+                    value = count
+
+                # Colorama stuff
+                if style == Style.COLORAMA:
+
+                    if attribute == Attribute.FILENAME_FULL:
+                        key = colorama.Fore.MAGENTA + key + colorama.Style.RESET_ALL
+
+                    elif attribute == Attribute.CODE:
+                        key = colorama.Fore.GREEN + key + colorama.Style.RESET_ALL
+                        value = colorama.Fore.RED + value + colorama.Style.RESET_ALL
+                    elif attribute == Attribute.LINE_NUMBER:
+                        pass
+
+                    elif attribute == Attribute.CALL_COUNT:
+                        key = colorama.Fore.BLUE + key + colorama.Style.RESET_ALL
+
+                dict_shared[key] = value
+
+            str_header_body = "\n".join("{}: {}".format(k, v) for k, v in dict_shared.items())
 
             list_str_information_full.append(str_header_body)
 
-            dict_body = {
-                "Execution Index": (_interpretable.get_execution_index_relative() for _interpretable in
-                                    list_interpretable),
+            def generator(attribute_: Attribute, list_interpretable_: List[Interpretable]):
+                """
+                Non late binding generator
 
-                "Scope Depth": (_interpretable.get_scope_parent().get_indent_depth_scope() for _interpretable in
-                                list_interpretable),
+                Notes:
+                    Due to writing a generator comprehension in the loop below causing a late binding issue,
+                    this generator prevents that problem
 
-                "Execution Count": (_interpretable.get_execution_count() for _interpretable in
-                                    list_interpretable),
+                :param attribute_:
+                :param list_interpretable_:
+                :return:
+                """
+                for _inter in list_interpretable_:
+                    yield DataIntermediateInterpretable(_inter).get_dict().get(attribute_)
 
-                "{Key: Value} Pairs": (_interpretable.dict_k_variable_v_value for _interpretable in
-                                       list_interpretable),
-            }
+            dict_table_body = {}
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis():
+                dict_table_body[DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name] = generator(
+                    attribute,
+                    list_interpretable
+                )
 
-            df_information = pd.DataFrame.from_dict(dict_body)
+            df_information = pd.DataFrame.from_dict(dict_table_body)
 
             # df_information.index.name = "Index"
 
+            # Temporarily set display.max_rows to be unlimited
             with pd.option_context('display.max_rows', None, ):
                 list_str_information_full.append(df_information.to_string())
 
@@ -416,10 +792,14 @@ class CodeAnalyzerPrinter:
         return str_full
 
     def export_to_txt(self):
-        print(os.path.basename(__file__))
-        print(sys.argv[0])
+        """
+        Write the non rich version of the code analysis to a file
 
-        print(os.path.basename(sys.argv[0]))
+        :return:
+        """
+        # print(os.path.basename(__file__))
+        # print(sys.argv[0])
+        # print(os.path.basename(sys.argv[0]))
 
         basename = os.path.basename(sys.argv[0])
         basename_no_ext = os.path.splitext(basename)[0]
@@ -429,106 +809,73 @@ class CodeAnalyzerPrinter:
         with open(output_name, "w") as file:
             self.print(print_function=file.write, style=None)
 
+    def export_rich_to_html(self):
+        """
+        Will write the terminal first then export the console's results to a html
 
-def _get_data_execution_analysis_interpretable(interpretable: Interpretable,
-                                               style: STYLES = None) -> TUPLE_INTERPRETABLE_DATA:
+        :return:
+        """
+
+        # Note: Writing to a file will only have plain text
+        console = Console(
+            soft_wrap=True,
+            record=True,
+        )
+
+        self.print_rich(console)
+
+        basename = os.path.basename(sys.argv[0])
+        basename_no_ext = os.path.splitext(basename)[0]
+
+        output_name = f"{basename_no_ext}_rich_execution_analysis.html"
+
+        console.save_html(output_name)  # By default clear=True to clear the buffer
+
+
+def _get_dict_interpretable_data_styled(interpretable: Interpretable,
+                                        dict_interpretable_data: DICT_K_ATTRIBUTE_V_DATA,
+                                        style: STYLES = None) -> DICT_K_ATTRIBUTE_V_DATA:
     """
-    Get data associated with a given interpretable
+    Style dict_interpretable_data
 
-    :param interpretable:
-    :return:
-    """
-    trace_call_result = interpretable.get_trace_call_result_primary()
+    Notes:
+        This code does not care if keys exist or not
 
-    #####
-
-    line_number = trace_call_result.get_code_line_number()
-
-    indent_depth_by_scope = interpretable.get_scope_parent().get_indent_depth_scope()
-
-    indent_level = trace_call_result.get_indent_depth_corrected()
-
-    code = _get_str_trace_call_result_code(trace_call_result, style)
-
-    #####
-
-    dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
-
-    dict_k_variable_v_value = dict_k_variable_v_value if dict_k_variable_v_value else ""
-
-    ##########
-
-    return (
-        interpretable.get_execution_index_relative(),
-        line_number,
-        indent_depth_by_scope,
-        indent_level,
-        interpretable.get_execution_count(),
-        code,
-        dict_k_variable_v_value,
-    )
-
-
-def _get_str_execution_analysis_interpretable(interpretable: Interpretable, style: STYLES = None) -> str:
-    """
-    Given an Interpretable, get a formatted string used for execution analysis
-
-    :param interpretable:
-    :param colored:
     :return:
     """
 
-    return _get_str_execution_analysis(
-        *_get_data_execution_analysis_interpretable(interpretable, style),
-        style
+    dict_temp = dict_interpretable_data
+
+    dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] = (
+        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] if dict_temp[
+            Attribute.DICT_K_VARIABLE_V_VALUE] else ""
     )
 
-
-def _get_str_execution_analysis(execution_index,
-                                line_number,
-                                depth_scope,
-                                indent_level,
-                                execution_number_relative,
-                                code,
-                                dict_k_variable_v_value,
-                                style: STYLES = None,
-                                ) -> str:
-    """
-        Helper function for _get_str_execution_analysis_interpretable
-
-    :param execution_index:
-    :param line_number:
-    :param depth_scope:
-    :param indent_level:
-    :param execution_number_relative:
-    :param code:
-    :param dict_k_variable_v_value:
-    :param colored:
-    :return:
-    """
-    if style == Style.COLORAMA:  # TODO ADD COLOR CODE CHANGE HERE
-        _dict_k_variable_v_value = colorama.Fore.RED + str(dict_k_variable_v_value) + colorama.Style.RESET_ALL
-    else:
-        _dict_k_variable_v_value = dict_k_variable_v_value
-
-    string = PRINT_FORMAT_STR_EXECUTION_ANALYSIS.format(
-        execution_index,
-        line_number,
-        depth_scope,
-        indent_level,
-        execution_number_relative,
-        code,
-        _dict_k_variable_v_value
+    dict_temp[Attribute.LIST_STR_COMMENT] = (
+        dict_temp[Attribute.LIST_STR_COMMENT] if dict_temp[Attribute.LIST_STR_COMMENT] else ""
     )
 
-    return string
+    if style == Style.COLORAMA:
+        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] = (
+                colorama.Fore.RED + str(dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE]) + colorama.Style.RESET_ALL
+        )
+
+        dict_temp[Attribute.LIST_STR_COMMENT] = (
+                colorama.Fore.RED + str(dict_temp[Attribute.LIST_STR_COMMENT]) + colorama.Style.RESET_ALL
+        )
+
+        # TODO: Design the below better
+        trace_call_result = interpretable.get_trace_call_result_primary()
+
+        dict_temp[Attribute.CODE] = _get_str_code_styled(trace_call_result, style)
+
+    return dict_temp
 
 
-def _get_str_trace_call_result_code(trace_call_result: TraceCallResult, style: STYLES = None) -> str:
+def _get_str_code_styled(trace_call_result: TraceCallResult, style: STYLES = None) -> str:
     """
     Given a TraceCallResult, return a colored version of its __str__()
 
-    :param code:
     :return:
     """
     spacing, line = trace_call_result.get_spacing_corrected_and_line()
@@ -538,22 +885,26 @@ def _get_str_trace_call_result_code(trace_call_result: TraceCallResult, style: S
         color_fore: Union[str, colorama.Fore] = ""
         color_back: Union[str, colorama.Back] = ""
 
+        # Function definition
         if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
                 trace_call_result.get_event() == constants.Event.LINE):
             color_fore = colorama.Fore.BLUE
 
+        # Function call
         elif (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
               trace_call_result.get_event() == constants.Event.CALL):
             color_fore = colorama.Fore.GREEN
 
+        # Class definition
         elif (trace_call_result.get_python_keyword() == constants.Keyword.CLASS and
               trace_call_result.get_event() == constants.Event.LINE):
-            color_fore = colorama.Fore.CYAN
+            # color_fore = colorama.Fore.CYAN
+            color_fore = colorama.Fore.BLUE
 
         # Fallback color for all Event.CALL
         elif trace_call_result.get_event() == constants.Event.CALL:
             color_fore = colorama.Fore.GREEN
 
-        return spacing + color_fore + color_back + line + colorama.Style.RESET_ALL
+        return color_fore + color_back + line + colorama.Style.RESET_ALL
 
-    return spacing + line
+    return line

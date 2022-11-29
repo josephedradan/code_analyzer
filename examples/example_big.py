@@ -88,6 +88,8 @@ def function():
         code_analyzer.record_comment_for_line_previous({"i VALUE 2 ON for": i})
 
         x += 1
+        code_analyzer.record_comment_for_line_previous("String comment {}".format(x))
+        code_analyzer.record_comment_for_line_previous({"Dict comment": x})
 
         x
         print()
@@ -208,4 +210,6 @@ if __name__ == '__main__':
     function()
     code_analyzer.stop()
     code_analyzer.print()
-    code_analyzer.get_code_analyzer_printer().print_rich()
+
+    # code_analyzer.get_code_analyzer_printer().print_rich()
+    code_analyzer.get_code_analyzer_printer().export_rich_to_html()

@@ -8,6 +8,11 @@ Let's say you don't want to use the debugger, and you want to see how your code 
 and neatly. You can import this module and add a few lines of code to initialize the analyzer and run your code, and
 you will get a simple print analysis of your code in your terminal or in a file.
 
+#### Requirements:
+    python>=3.6
+    rich
+    colorama
+
 #### Example?
 
     from code_analyzer import CodeAnalyzer

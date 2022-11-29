@@ -45,6 +45,9 @@ recursive(5)
 
 code_analyzer.stop()
 code_analyzer.print()
-# code_analyzer.get_code_analyzer_printer().print_debug()
-# code_analyzer.get_code_analyzer_printer().export_to_txt()
-code_analyzer.get_code_analyzer_printer().print_rich()
+
+code_analyzer.get_code_analyzer_printer().print_debug()
+code_analyzer.get_code_analyzer_printer().export_to_txt()
+
+# code_analyzer.get_code_analyzer_printer().print_rich()  # export_rich_to_html prints to console by default
+code_analyzer.get_code_analyzer_printer().export_rich_to_html()

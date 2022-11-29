@@ -73,7 +73,7 @@ class Interpretable:
         self.dict_k_variable_v_value: dict = {}
 
         # List of strings
-        self.list_str: List[str] = []
+        self.list_str_comment: List[str] = []
 
         ##################################################
         """
@@ -143,7 +143,7 @@ class Interpretable:
                 self.update_dict_k_variable_v_value(comment)
 
             elif isinstance(comment, str):
-                self.update_list_str(comment)
+                self.update_list_str_comment(comment)
 
     def update_dict_k_variable_v_value(self, dict_k_variable_v_value: dict):
         self.dict_k_variable_v_value.update(dict_k_variable_v_value)
@@ -151,19 +151,18 @@ class Interpretable:
     def get_dict_k_variable_v_value(self) -> dict:
         return self.dict_k_variable_v_value
 
-    def update_list_str(self, string: str):
-        self.list_str.append(string)
+    def update_list_str_comment(self, string: str):
+        self.list_str_comment.append(string)
 
-    def get_list_str(self) -> List[str]:
-        return self.list_str
+    def get_list_str_comment(self) -> List[str]:
+        return self.list_str_comment
 
     def get_trace_call_result_primary(self) -> _trace_call_result.TraceCallResult:
         """
         Get the primary TraceCallResult object that would represent this object
         as its primary TraceCallResult object assuming that hter
 
-        TODO: Redesign, give who decides what is the primary TraceCallResult to the python code analyzer
-
+        TODO: Redesign, give who 3
         :return:
         """
         if not self.list_trace_call_result:
@@ -198,7 +197,7 @@ class Interpretable:
                 1. TraceCallResult with Event == Call Relative to the inner scope_parent 
                 2. TraceCallResult with Event == Line Relative to the inner scope_parent
             """
-            # print_function("FUCKCC", self.list_trace_call_result)  # FUCK JOSEPH TEST THIS SHIT IN PY  TESTING
+            # TODO: PYTEST THE BELOW
             # if self.list_trace_call_result[0].get_event() == constants.Event.LINE:
             #     assert len(self.list_trace_call_result) == 1
             # else:
@@ -253,7 +252,7 @@ class Interpretable:
         """
         Since interpretables are pretty much based on the their primary TraceCallResult object,
         use it's hash. If the above statement is true, the only difference between Interpretable
-        objects will be their self.dict_k_variable_v_value and self.list_str
+        objects will be their self.dict_k_variable_v_value and self.list_str_comment
 
         :return:
         """

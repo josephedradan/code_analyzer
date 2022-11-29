@@ -64,7 +64,7 @@ from collections import defaultdict
 from enum import Enum, auto
 from functools import wraps
 from types import TracebackType, FrameType
-from typing import Union, List, Dict, Any, Callable
+from typing import Union, List, Dict, Callable
 
 from code_analyzer import constants
 from code_analyzer.code_analyzer_printer import CodeAnalyzerPrinter
@@ -250,6 +250,8 @@ class CodeAnalyzer:
 
         # Line with the longest amount of chars
         self.length_line_most_chars: int = 0
+
+        self.length_line_most_chars_with_comments: int = 0
 
         # self.trace_call_result_deepest: Union[TraceCallResult, None] = None
 
@@ -1323,8 +1325,16 @@ class CodeAnalyzer:
             length_line = len(str(trace_call_result_primary))
 
             # Assigning the length of the line with the most chars
-            if length_line > self.length_line_most_chars:
-                self.length_line_most_chars = length_line
+            self.length_line_most_chars = max(self.length_line_most_chars, length_line)
+
+            length_line_with_comments = (
+                    length_line +
+                    len(str(interpretable.get_dict_k_variable_v_value())) +
+                    len(str(interpretable.get_list_str_comment()))
+            )
+
+            self.length_line_most_chars_with_comments = max(self.length_line_most_chars_with_comments,
+                                                            length_line_with_comments)
 
     def record_comment_for_line_next(self, comment: Union[constants.COMMENT]) -> None:
         """

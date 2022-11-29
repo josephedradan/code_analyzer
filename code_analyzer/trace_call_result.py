@@ -275,7 +275,7 @@ class TraceCallResult:
 
     def get_spacing_corrected_and_line(self) -> Tuple[str, str]:
         """
-        Get the corrected spacing and the actual line of code as a tuple
+        Get the corrected code_spacing and the actual line of code as a tuple
         :return:
         """
         return (
