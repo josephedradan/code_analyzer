@@ -670,7 +670,7 @@ class CodeAnalyzerPrinter:
                     dict_k_attribute_v_data__filtered[Attribute.CODE_SPACING]
                 )
 
-                # *** THE ONLY WAY TO REMOVE THE NEWLINE AND NOT THE SPACES ***
+                # *** DUMB WAY TO REMOVE THE NEWLINE AT THE END AND NOT THE SPACES ***
                 text_code_spacing = text_code_spacing.split()[0]
 
                 dict_k_attribute_v_data__filtered.pop(Attribute.CODE_SPACING)
@@ -679,7 +679,7 @@ class CodeAnalyzerPrinter:
                     dict_k_attribute_v_data__filtered[Attribute.CODE]
                 )
 
-                text_code.rstrip()  # Removes newline that was added for reason
+                text_code.rstrip()  # Removes newline that was added for some reason...
 
                 # ----- Styling ----- #
 
@@ -800,7 +800,7 @@ class CodeAnalyzerPrinter:
                     text_value = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
                         str(text_value)
                     )
-                    text_value.rstrip()  # Removes newline that was added for reason
+                    text_value.rstrip()  # Removes newline that was added for some reason...
 
                 # Call Count
                 elif attribute == Attribute.CALL_COUNT:

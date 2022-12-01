@@ -1,20 +1,20 @@
 # Code Analyser
 
-#### What is this?
+### What is this?
 A Python code that allows you to visually see how your code works after the execution of your code.
 
-#### Why would you use this?
+### Why would you use this?
 Let's say you don't want to use the debugger, and you want to see how your code runs line by line printed out easily
 and neatly. You can import this module and add a few lines of code to initialize the analyzer and run your code, and
 you will get a simple print analysis of your code in your terminal or in a file.
 
-#### Requirements:
+### Requirements:
     python>=3.6
     rich
     colorama
     pandas
 
-#### Example?
+### Example?
 
     from code_analyzer import CodeAnalyzer
     
@@ -43,9 +43,9 @@ you will get a simple print analysis of your code in your terminal or in a file.
 Or just look at the other examples in examples folder.
 
 
-#### Output
+### Output
 ![example_recursive.png](./images/example_recursive.png)
-#### Notes
+### Notes
 
 In the output of a print (Such as in the image above):
 
@@ -66,6 +66,14 @@ In the output of a rich export (such as the .html files in the examples folder):
 * Orange background code is a result of one of the method calls below with an argument having the type that is not a dict:
     * .record_comment_for_interpretable_next(...) 
     * .record_comment_for_interpretable_previous(...)
+
+__IF YOU SEE CODE THAT DOESN'T SEEM TO BE CODE THAT YOU SHOULD BE ANALYZING WHEN USING TYPE HINTING, ADD THE 
+IMPORT BELOW TO THE TOP OF THE FILE TO POSSIBLY REMOVE IT__
+
+    from __future__ import annotations
+
+
+[Example of a html rich output from the file "examples/example_cursive_complex.py"](https://htmlpreview.github.io/?https://github.com/josephedradan/code_analyzer/blob/main/examples/example_cursive_complex_code_analysis_rich.html)
 
 __TODO:__
 

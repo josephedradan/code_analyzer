@@ -32,8 +32,10 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()  # Initialize analyzer
 code_analyzer.start()
 
+code_analyzer.record_comment_for_interpretable_next("Function Definition")
 
-def fancy_recursive(current: int, current_next: Union[None, int] = None):
+
+def recursive_complex(current: int, current_next: Union[None, int] = None):
     code_analyzer.record_comment_for_interpretable_previous({"current": current, "current_next": current_next})
 
     code_analyzer.hide_interpretable_next()
@@ -42,17 +44,18 @@ def fancy_recursive(current: int, current_next: Union[None, int] = None):
         current_next = current - 1
 
     if current == 0:
+        code_analyzer.record_comment_for_interpretable_next(f"Returning value: {current_next}")
         return current_next
 
-    value = fancy_recursive(current - 1, current_next)
+    value = recursive_complex(current - 1, current_next)
 
-    if current - value == 1:
-        fancy_recursive(value, value - 1)
+    if current - value == 1:  # Dank memes
+        recursive_complex(value, value - 1)
 
     return value
 
 
-fancy_recursive(10)
+recursive_complex(10)
 
 code_analyzer.stop()
 code_analyzer.print()
