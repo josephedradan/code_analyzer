@@ -27,13 +27,13 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()
 
 with code_analyzer as ca:
-    code_analyzer.record_comment_for_line_previous({'This should be on "def add(x: int, y: int)" (1)': "Good code!"})
-    code_analyzer.record_comment_for_line_next({'This should be on "def add(x: int, y: int)" (2)': "Good code!"})
+    code_analyzer.record_comment_for_interpretable_previous({'This should be on "def add(x: int, y: int)" (1)': "Good code!"})
+    code_analyzer.record_comment_for_interpretable_next({'This should be on "def add(x: int, y: int)" (2)': "Good code!"})
 
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_line_next({"Random Comment": "Good code!"})
+        code_analyzer.record_comment_for_interpretable_next({"Random Comment": "Good code!"})
         result = x + y
-        ca.record_comment_for_line_previous({"result": result})
+        ca.record_comment_for_interpretable_previous({"result": result})
 
         for i in range(1):
             x = i

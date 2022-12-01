@@ -442,12 +442,12 @@ def test_code_analyzer_hide_line_previous():
 
     x = 2
     y = 3
-    code_analyzer.hide_line_previous(2)
+    code_analyzer.hide_interpretable_previous(2)
 
     sum_ = x + y
     for i in range(3):
         v = 10
-        code_analyzer.hide_line_previous(1)
+        code_analyzer.hide_interpretable_previous(1)
         sum_ += v
 
     code_analyzer.stop()
@@ -480,13 +480,13 @@ def test_code_analyzer_hide_line_next():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.hide_line_next(2)
+    code_analyzer.hide_interpretable_next(2)
     x = 2
     y = 3
 
     sum_ = x + y
     for i in range(3):
-        code_analyzer.hide_line_next(1)
+        code_analyzer.hide_interpretable_next(1)
         v = 10
         sum_ += v
 
@@ -519,9 +519,9 @@ def test_code_analyzer_hide_line_next_dealing_with_conflicting_method_calls():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.hide_line_next(10)
+    code_analyzer.hide_interpretable_next(10)
     a = 1
-    code_analyzer.hide_line_next(2)  # This should over
+    code_analyzer.hide_interpretable_next(2)  # This should over
     x = 1
     y = 2
     z = 3
@@ -546,20 +546,20 @@ def test_code_analyzer_hide_line_next_dealing_with_more_method_calls():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.hide_line_next(2)
-    code_analyzer.record_comment_for_line_previous({"Hello 1": 1})
-    code_analyzer.record_comment_for_line_next({"Hello 2": 2})
-    code_analyzer.record_comment_for_line_next({"Hello 3": 3})
+    code_analyzer.hide_interpretable_next(2)
+    code_analyzer.record_comment_for_interpretable_previous({"Hello 1": 1})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 2": 2})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 3": 3})
     x = 1
-    code_analyzer.record_comment_for_line_previous({"Hello 4": 4})
-    code_analyzer.record_comment_for_line_next({"Hello 5": 5})
-    code_analyzer.record_comment_for_line_next({"Hello 6": 6})
+    code_analyzer.record_comment_for_interpretable_previous({"Hello 4": 4})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 5": 5})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 6": 6})
     y = 2
-    code_analyzer.record_comment_for_line_previous({"Hello 7": 7})
-    code_analyzer.record_comment_for_line_next({"Hello 8": 8})
-    code_analyzer.record_comment_for_line_next({"Hello 9": 9})
+    code_analyzer.record_comment_for_interpretable_previous({"Hello 7": 7})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 8": 8})
+    code_analyzer.record_comment_for_interpretable_next({"Hello 9": 9})
     z = 3
-    code_analyzer.record_comment_for_line_previous({"Hello 10": 10})
+    code_analyzer.record_comment_for_interpretable_previous({"Hello 10": 10})
 
     code_analyzer.stop()
     code_analyzer.print()

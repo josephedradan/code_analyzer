@@ -67,7 +67,7 @@ def test_code_analyzer_interpretable_recursive():
     code_analyzer.start()
 
     def recursive(depth):
-        code_analyzer.record_comment_for_line_previous({"Depth": depth})
+        code_analyzer.record_comment_for_interpretable_previous({"Depth": depth})
         if depth <= 0:
             return depth
 

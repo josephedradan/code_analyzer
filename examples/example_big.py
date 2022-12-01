@@ -69,11 +69,11 @@ def function():
 
     josh.get_nothing()
 
-    code_analyzer.record_comment_for_line_next({"x VALUE 1 ON for": x})
-    code_analyzer.record_comment_for_line_next({"x VALUE 2 ON for": x})
+    code_analyzer.record_comment_for_interpretable_next({"x VALUE 1 ON for": x})
+    code_analyzer.record_comment_for_interpretable_next({"x VALUE 2 ON for": x})
 
-    code_analyzer.record_comment_for_line_previous({"FFFF 1 ON x": i})
-    code_analyzer.record_comment_for_line_previous({"FFFF 2 ON x": i})
+    code_analyzer.record_comment_for_interpretable_previous({"FFFF 1 ON x": i})
+    code_analyzer.record_comment_for_interpretable_previous({"FFFF 2 ON x": i})
 
     # The below does not include the additional lines that complete the statement
     testing = (
@@ -82,22 +82,22 @@ def function():
 
     for i in range(4):
         print(i)
-        code_analyzer.record_comment_for_line_next({"TESTING ON x += 1": "uhhh..."})
+        code_analyzer.record_comment_for_interpretable_next({"TESTING ON x += 1": "uhhh..."})
 
-        code_analyzer.record_comment_for_line_previous({"i VALUE 1 ON for": i})
-        code_analyzer.record_comment_for_line_previous({"i VALUE 2 ON for": i})
+        code_analyzer.record_comment_for_interpretable_previous({"i VALUE 1 ON for": i})
+        code_analyzer.record_comment_for_interpretable_previous({"i VALUE 2 ON for": i})
 
         x += 1
-        code_analyzer.record_comment_for_line_previous("String comment {}".format(x))
-        code_analyzer.record_comment_for_line_previous({"Dict comment": x})
+        code_analyzer.record_comment_for_interpretable_previous("String comment {}".format(x))
+        code_analyzer.record_comment_for_interpretable_previous({"Dict comment": x})
 
         x
         print()
 
-        code_analyzer.record_comment_for_line_next({"IM ON TOP": "YO"})
+        code_analyzer.record_comment_for_interpretable_next({"IM ON TOP": "YO"})
         z = add(i, x)
 
-        code_analyzer.record_comment_for_line_previous({"z VALUE": z})
+        code_analyzer.record_comment_for_interpretable_previous({"z VALUE": z})
 
         print(z)
 
@@ -130,11 +130,11 @@ def function():
             self.x = 23
 
     dude = 233333
-    code_analyzer.record_comment_for_line_next({"1 SHOULD BE ON bob = Bob()": "TEST 1"})
+    code_analyzer.record_comment_for_interpretable_next({"1 SHOULD BE ON bob = Bob()": "TEST 1"})
 
     bob = Bob()
-    code_analyzer.record_comment_for_line_previous({"2 SHOULD BE ON bob = Bob()": "TEST 2"})
-    code_analyzer.record_comment_for_line_previous({"3 SHOULD BE ON bob = Bob()": "TEST 3"})
+    code_analyzer.record_comment_for_interpretable_previous({"2 SHOULD BE ON bob = Bob()": "TEST 2"})
+    code_analyzer.record_comment_for_interpretable_previous({"3 SHOULD BE ON bob = Bob()": "TEST 3"})
 
     last_line = 2323
 
@@ -150,15 +150,15 @@ def function():
         return ret_inner()
 
     ret()
-    code_analyzer.record_comment_for_line_previous({"SHOULD BE ON ret()": "HELLO"})
-    code_analyzer.record_comment_for_line_next({"SHOULD BE ON print_function": "HELLO"})
+    code_analyzer.record_comment_for_interpretable_previous({"SHOULD BE ON ret()": "HELLO"})
+    code_analyzer.record_comment_for_interpretable_next({"SHOULD BE ON print_function": "HELLO"})
 
     print("RECURSIVE CALL TESTING")
 
     recursive_call(4)
 
     def idk():
-        code_analyzer.record_comment_for_line_previous({"SHOULD BE ON CALLABLE'S HEAD": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_previous({"SHOULD BE ON CALLABLE'S HEAD": "JOSEPH"})
 
         def yo():
             _x = 24
@@ -166,12 +166,12 @@ def function():
 
         print("WHEN AM I CALLED?")
 
-        code_analyzer.record_comment_for_line_next({"ON RETURN I THINK": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"ON RETURN I THINK": "JOSEPH"})
 
         return yo()
 
     idk()
-    code_analyzer.record_comment_for_line_previous({"ON idk()": "JOSEPH"})
+    code_analyzer.record_comment_for_interpretable_previous({"ON idk()": "JOSEPH"})
 
     def empty():
         x = 2
@@ -179,23 +179,23 @@ def function():
 
         print("YO")
         # code_analyzer.record_dict_for_line_previous({"ON x = 2": "JOSEPH"})
-        code_analyzer.record_comment_for_line_next({"ON return?": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"ON return?": "JOSEPH"})
         # pass
 
     empty()
 
     def yee():
         x = 2
-        code_analyzer.record_comment_for_line_next({"ON x = 2 (1))": "JOSEPH"})
-        code_analyzer.record_comment_for_line_previous({"ON x = 2 (2)": "JOSEPH"})
-        code_analyzer.record_comment_for_line_next({"ON x = 2 (3)": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"ON x = 2 (1))": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_previous({"ON x = 2 (2)": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"ON x = 2 (3)": "JOSEPH"})
 
     yee()
 
     def yee2():
         # x = 2
-        code_analyzer.record_comment_for_line_next({"Testing next 1": "JOSEPH"})
-        code_analyzer.record_comment_for_line_next({"Testing next 2": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"Testing next 1": "JOSEPH"})
+        code_analyzer.record_comment_for_interpretable_next({"Testing next 2": "JOSEPH"})
         # code_analyzer.record_dict_for_line_previous({"ON yee2() 2123123 2": "JOSEPH"})
 
     yee2()
@@ -212,4 +212,4 @@ if __name__ == '__main__':
     code_analyzer.print()
 
     # code_analyzer.get_code_analyzer_printer().print_rich()
-    code_analyzer.get_code_analyzer_printer().export_rich_to_html()
+    # code_analyzer.get_code_analyzer_printer().export_rich_to_html()

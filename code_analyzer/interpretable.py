@@ -145,6 +145,11 @@ class Interpretable:
             elif isinstance(comment, str):
                 self.update_list_str_comment(comment)
 
+            elif isinstance(comment, list):
+                self.list_str_comment.extend(comment)
+            else:
+                self.update_list_str_comment(str(comment))
+
     def update_dict_k_variable_v_value(self, dict_k_variable_v_value: dict):
         self.dict_k_variable_v_value.update(dict_k_variable_v_value)
 

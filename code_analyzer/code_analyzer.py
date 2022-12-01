@@ -1336,7 +1336,7 @@ class CodeAnalyzer:
             self.length_line_most_chars_with_comments = max(self.length_line_most_chars_with_comments,
                                                             length_line_with_comments)
 
-    def record_comment_for_line_next(self, comment: Union[constants.COMMENT]) -> None:
+    def record_comment_for_interpretable_next(self, comment: Union[constants.COMMENT]) -> None:
         """
         Update update_dict_k_variable_v_value for _interpretable_current by appending the
         dict to a list that will then be exhausted into the next trace_call_result
@@ -1348,7 +1348,7 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT)
 
-    def record_comment_for_line_previous(self, comment: Union[constants.COMMENT]) -> None:
+    def record_comment_for_interpretable_previous(self, comment: Union[constants.COMMENT]) -> None:
         """
         Update update_dict_k_variable_v_value for trace_call_result_previous
 
@@ -1360,24 +1360,70 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
 
-    def hide_line_previous(self, amount: Union[int] = 1):
+    def hide_interpretable_previous(self, amount: Union[int] = 1):
+        """
+        Will hide the previous interpretable from being seen when being printed to the terminal
+        or exported to a file. Think of this function as hiding the previous interpreted line of code
+        that was executed.
+
+        Passing a value to the parameter amount will hide that amount of interpretables before this call.
+
+        :param amount:
+        :return:
+        """
         self._count_interpretable_previous_visibility_false = amount
 
         self._list_procedure.append(CodeAnalyzer._Procedure.HIDE_LINE_PREVIOUS)
 
-    def hide_line_next(self, amount: Union[int] = 1):
+    def hide_interpretable_next(self, amount: Union[int] = 1):
+        """
+        Will hide the next interpretable from being seen when being printed to the terminal
+        or exported to a file. Think of this function as hiding the previous interpreted line of code
+        that was executed.
+
+        Passing a value to the parameter amount will hide that amount of interpretables after this call.
+
+        :param amount:
+        :return:
+        """
         self._count_interpretable_next_visibility_false = amount
 
         self._list_procedure.append(CodeAnalyzer._Procedure.HIDE_LINE_NEXT)
 
     def print(self):
+        """
+        Standard code analysis print using pure python.
+
+        :return:
+        """
         if self._running:
             raise IllegalCall("Cannot call this function until the stop method is called!")
 
         self.code_analyzer_printer.print()
 
+    def print_rich_and_export_rich(self):
+        """
+        Will use rich to format the output and export what was sent to the terminal to an html file.
+
+        :return:
+        """
+        if self._running:
+            raise IllegalCall("Cannot call this function until the stop method is called!")
+
+        self.code_analyzer_printer.export_rich_to_html()
+
     def get_code_analyzer_printer(self) -> CodeAnalyzerPrinter:
+        """
+        Return a Custom printer that prints the information analyzed by this analyzer.
+        There are more specific printing and exporting methods in this object
+
+        :return:
+        """
         return self.code_analyzer_printer
 
     def get_list_interpretable(self) -> List[Interpretable]:
+        """
+        Get the list of interpretables called, not recommended to be called when stop() hasn't been called.
+        :return:
+        """
         return self.list_interpretable

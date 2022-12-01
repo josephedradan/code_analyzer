@@ -67,6 +67,9 @@ STR_LINE_OF_CODE_ANALYSIS_HEADER: str = "{}\n{}\n{}\n".format(BORDER_SPACE_SECON
 RICH_SYNTAX_THEME = "monokai"
 RICH_SYNTAX_LEXER = "python"
 
+RICH_TABLE_STYLE = "bold white on black"
+RICH_TABLE_HEADER_STYLE = "bold white on black"
+
 
 ##########
 
@@ -354,305 +357,6 @@ class CodeAnalyzerPrinter:
 
         print_function(str_full)
 
-    def print_rich(self, console: Union[Console, None] = None):
-
-        if console is None:
-            # Note: Writing to a file will only have plain text
-            console = Console(
-                soft_wrap=True,
-                # record=True,
-            )
-
-        console.print(STR_CODE_ANALYSIS_HEADER)
-        self._do_rich_execution_analysis(console)
-        self._do_rich_line_of_code_analysis(console)
-
-    def _do_rich_execution_analysis(self, console: Console):
-
-        console.print(STR_EXECUTION_ANALYSIS_HEADER)
-
-        dict_k_attribute_v_attribute_name = {
-            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
-            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
-        }
-
-        _bool_code_exists = dict_k_attribute_v_attribute_name.get(Attribute.CODE, None) is not None
-
-        table = Table(
-            # title=STR_EXECUTION_ANALYSIS_HEADER,
-            expand=True,
-            width=self.code_analyzer.length_line_most_chars_with_comments + len(
-                "".join(dict_k_attribute_v_attribute_name.values()))
-        )
-
-        if _bool_code_exists:
-
-            _str_dict = ""
-            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
-                _str_dict = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
-                    Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].name
-                )
-
-            _str_list = ""
-            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.LIST_STR_COMMENT, None) is not None:
-                _str_list = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
-                    Attribute.LIST_STR_COMMENT].str_format.format(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].name
-                )
-
-            dict_k_attribute_v_attribute_name[Attribute.CODE] = "{}{}{}".format(
-                DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.CODE].name,
-                _str_dict,
-                _str_list
-            )
-
-        for attribute, attribute_name in dict_k_attribute_v_attribute_name.items():
-
-            if _bool_code_exists and (
-                    attribute == Attribute.CODE_SPACING or
-                    attribute == Attribute.DICT_K_VARIABLE_V_VALUE or
-                    attribute == Attribute.LIST_STR_COMMENT):
-                pass
-            elif attribute == Attribute.CODE_SPACING:
-                # Never have a column for code spacing because it's empty
-                pass
-            elif attribute == Attribute.CODE:
-                table.add_column(
-                    dict_k_attribute_v_attribute_name[attribute],
-                    no_wrap=True,
-                    width=self.code_analyzer.length_line_most_chars_with_comments,
-                    header_style="bold"
-                )
-            else:
-                table.add_column(
-                    dict_k_attribute_v_attribute_name[attribute],
-                    no_wrap=True,
-                    header_style="bold"
-                )
-
-            # Doesn't work as intended
-            # if i == 5:
-            #     table.add_column(
-            #         attribute_name,
-            #         no_wrap=True,
-            #         style=Syntax.get_theme("python").get_style_for_token()
-            #     )
-            # else:
-            #     table.add_column(
-            #         attribute_name,
-            #         no_wrap=True,
-            #     )
-
-        for interpretable in self.code_analyzer.list_interpretable:
-
-            if interpretable.visibility is False:
-                continue
-
-            trace_call_result = interpretable.get_trace_call_result_primary()
-
-            dict_k_attribute_v_data = DataIntermediateInterpretable(interpretable).get_dict()
-
-            dict_k_attribute_v_data_filtered = {k: v for k, v in dict_k_attribute_v_data.items() if
-                                                k in dict_k_attribute_v_attribute_name}
-
-            """
-            Notes:
-                Rich styling:
-                    Styles for "style" can be found at https://rich.readthedocs.io/en/stable/style.html 
-                    Colors for "style" can be found at https://rich.readthedocs.io/en/stable/appendix/colors.html
-            """
-            if dict_k_attribute_v_data_filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
-                # Removes empty dict string
-                dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] = (
-                    dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] if
-                    dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE] else ""
-                )
-
-                dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE]: Text = Text(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
-                        dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE]),
-                    style="rgb(255,0,0)",  # Red
-                    # style="dark_orange",
-                )
-
-            if dict_k_attribute_v_data_filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
-                # Removes empty list string
-                dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] = (
-                    dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] if
-                    dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT] else ""
-                )
-
-                dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT]: Text = Text(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].str_format.format(
-                        dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT]),
-                    # style="rgb(255,0,0)",  # Red
-                    style="dark_orange",
-                )
-
-            if (dict_k_attribute_v_data_filtered.get(Attribute.CODE_SPACING, None) is not None and
-                    dict_k_attribute_v_data_filtered.get(Attribute.CODE, None) is not None and
-                    _bool_code_exists):
-                r"""
-                Notes:
-                    Themes:
-                        Possible themes for "theme" can be found at:
-                            .../Lib/site-packages/rich/syntax.py
-                        Look for the dict STYLE_MAP
-
-                        To see the style go to https://pygments.org/styles/
-
-                        Example:
-                            theme="native"
-                            theme="monokai"  # Which is the default
-
-                    The first arg in Syntax(...) is ignored when using highlight and there
-                    is no official documentation for highlight online. 
-                """
-
-                text_code_spacing: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
-                    dict_k_attribute_v_data_filtered[Attribute.CODE_SPACING]
-                )
-
-                # *** THE ONLY WAY TO REMOVE THE NEWLINE AND NOT THE SPACES ***
-                text_code_spacing = text_code_spacing.split()[0]
-
-                dict_k_attribute_v_data_filtered.pop(Attribute.CODE_SPACING)
-
-                text_code: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
-                    dict_k_attribute_v_data_filtered[Attribute.CODE]
-                )
-
-                text_code.rstrip()  # Removes newline that somehow exists
-
-                ##########
-
-                # Function definition
-                if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
-                        trace_call_result.get_event() == constants.Event.LINE):
-                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
-
-                # Function call
-                elif (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
-                      trace_call_result.get_event() == constants.Event.CALL):
-                    text_code.stylize("on rgb(0,95,0)")  # dark_green
-
-                # Class definition
-                elif (trace_call_result.get_python_keyword() == constants.Keyword.CLASS and
-                      trace_call_result.get_event() == constants.Event.LINE):
-                    # text_code.stylize("on rgb(175,0,215)")  # dark_violet
-                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
-
-                # Fallback color for all Event.CALL
-                elif trace_call_result.get_event() == constants.Event.CALL:
-                    text_code.stylize("on rgb(0,95,0)")  # dark_green
-
-                ##########
-
-                text_code_spacing.append_text(text_code)
-
-                if dict_k_attribute_v_data_filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
-                    text_code_spacing.append_text(dict_k_attribute_v_data_filtered[Attribute.DICT_K_VARIABLE_V_VALUE])
-
-                    dict_k_attribute_v_data_filtered.pop(Attribute.DICT_K_VARIABLE_V_VALUE)
-
-                if dict_k_attribute_v_data_filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
-                    text_code_spacing.append_text(dict_k_attribute_v_data_filtered[Attribute.LIST_STR_COMMENT])
-
-                    dict_k_attribute_v_data_filtered.pop(Attribute.LIST_STR_COMMENT)
-
-                dict_k_attribute_v_data_filtered[Attribute.CODE] = text_code_spacing
-
-                # print(f"{text_code_spacing.markup=}")  # DEBUGGING: Check what the markup is
-
-            list_data: List[str] = [(str(data) if isinstance(data, int) else data)
-                                    for data in dict_k_attribute_v_data_filtered.values()]
-
-            table.add_row(*list_data)
-
-            # DEBUGGING: If the width of the table is too big, then it will reset the console's width to 79
-            # print(f"{self.console.size=}")
-
-        console.print(table)
-
-    def _do_rich_line_of_code_analysis(self, console: Console):
-        console.print(STR_LINE_OF_CODE_ANALYSIS_HEADER)
-
-
-
-        for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
-            table_shared = Table(
-                expand=True,
-                width=self.code_analyzer.length_line_most_chars_with_comments
-            )
-
-            table_shared.add_column("Name")
-            table_shared.add_column("Value")
-
-            ########################
-
-            trace_call_result = interpretable.get_trace_call_result_primary()
-
-            line_of_code = trace_call_result.code_line_strip
-
-            count = len(list_interpretable)
-
-            for attribute in self._get_list_attribute_allowed_line_of_code_analysis_shared():
-
-                key = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name
-
-                value = DataIntermediateInterpretable(interpretable).get_dict().get(attribute)
-
-                # Stuff that can't be found in a DataIntermediateInterpretable's dict
-                if attribute == Attribute.CALL_COUNT:
-                    value = count
-
-                table_shared.add_row(str(key), str(value))
-
-            console.print(table_shared)
-
-            ########################
-
-            table_body = Table(
-                expand=True,
-                width=self.code_analyzer.length_line_most_chars_with_comments
-
-            )
-
-            for attribute in self._get_list_attribute_allowed_line_of_code_analysis():
-                table_body.add_column(DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name)
-
-            for interpretable_inner in list_interpretable:
-
-                data_intermediate_interpretable = DataIntermediateInterpretable(interpretable_inner)
-
-                dict_data_intermediate_interpretable =data_intermediate_interpretable.get_dict()
-
-                list_data = [str(dict_data_intermediate_interpretable.get(attribute)) for attribute in
-                             self._get_list_attribute_allowed_line_of_code_analysis()]
-
-                table_body.add_row(*list_data)
-
-            console.print(table_body)
-            console.print("\n")
-
-
-
-
-    def print_debug(self):
-        """
-        A debugging print_function used to figure out where bugs are
-
-        :return:
-        """
-
-        print("{}\n{}\n{}\n".format(BORDER_SPACE_PRIMARY, "DEBUG PRINT", BORDER_SPACE_PRIMARY))
-
-        for _inter in self.code_analyzer.list_interpretable:
-            for _tra in _inter.list_trace_call_result:
-                print(_tra, _tra.get_event())
-            print()
-
     def get_str_execution_analysis(self, style: STYLES = None) -> str:
 
         str_header_main = STR_EXECUTION_ANALYSIS_HEADER
@@ -673,7 +377,7 @@ class CodeAnalyzerPrinter:
             # Dict with allowed columns based on what exists in dict_k_attribute_v_attribute_name
             dict_k_attribute_v_data_filtered = {
                 k: v for k, v in dict_k_attribute_v_data.items() if
-                dict_k_attribute_v_attribute_name
+                k in dict_k_attribute_v_attribute_name
             }
 
             dict_k_attribute_v_data_styled = _get_dict_interpretable_data_styled(
@@ -791,6 +495,364 @@ class CodeAnalyzerPrinter:
 
         return str_full
 
+    def print_rich(self, console: Union[Console, None] = None):
+
+        if console is None:
+            # Note: Writing to a file will only have plain text
+            console = Console(
+                soft_wrap=True,
+                # record=True,
+            )
+
+        console.print(Text(STR_CODE_ANALYSIS_HEADER, style=RICH_TABLE_STYLE))
+        self._do_rich_execution_analysis(console)
+        console.print("\n")
+        self._do_rich_line_of_code_analysis(console)
+
+    def _do_rich_execution_analysis(self, console: Console):
+        """
+        Do the rich version of execution analysis
+
+        :param console:
+        :return:
+        """
+        console.print(Text(STR_EXECUTION_ANALYSIS_HEADER, style=RICH_TABLE_STYLE))
+
+        dict_k_attribute_v_attribute_name = {
+            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
+            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+        }
+
+        _bool_code_exists = dict_k_attribute_v_attribute_name.get(Attribute.CODE, None) is not None
+
+        table = Table(
+            # title=STR_EXECUTION_ANALYSIS_HEADER,
+            expand=True,
+            width=(
+                    self.code_analyzer.length_line_most_chars_with_comments +
+                    len("".join(dict_k_attribute_v_attribute_name.values()))
+            ),
+            style=RICH_TABLE_STYLE
+        )
+
+        if _bool_code_exists:
+
+            _str_dict = ""
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                _str_dict = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                    Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].name
+                )
+
+            _str_list = ""
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                _str_list = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                    Attribute.LIST_STR_COMMENT].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].name
+                )
+
+            dict_k_attribute_v_attribute_name[Attribute.CODE] = "{}{}{}".format(
+                DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.CODE].name,
+                _str_dict,
+                _str_list
+            )
+
+        for attribute, attribute_name in dict_k_attribute_v_attribute_name.items():
+
+            if _bool_code_exists and (
+                    attribute == Attribute.CODE_SPACING or
+                    attribute == Attribute.DICT_K_VARIABLE_V_VALUE or
+                    attribute == Attribute.LIST_STR_COMMENT):
+                pass
+            elif attribute == Attribute.CODE_SPACING:
+                # Never have a column for code spacing because it's empty
+                pass
+            elif attribute == Attribute.CODE:
+                table.add_column(
+                    dict_k_attribute_v_attribute_name[attribute],
+                    no_wrap=True,
+                    width=self.code_analyzer.length_line_most_chars_with_comments,
+                    header_style=RICH_TABLE_HEADER_STYLE,
+                    style=RICH_TABLE_STYLE
+                )
+            else:
+                table.add_column(
+                    dict_k_attribute_v_attribute_name[attribute],
+                    no_wrap=True,
+                    header_style=RICH_TABLE_HEADER_STYLE,
+                    style=RICH_TABLE_STYLE
+                )
+
+            # Doesn't work as intended
+            # if i == 5:
+            #     table.add_column(
+            #         attribute_name,
+            #         no_wrap=True,
+            #         style=Syntax.get_theme("python").get_style_for_token()
+            #     )
+            # else:
+            #     table.add_column(
+            #         attribute_name,
+            #         no_wrap=True,
+            #     )
+
+        for interpretable in self.code_analyzer.list_interpretable:
+
+            if interpretable.visibility is False:
+                continue
+
+            trace_call_result = interpretable.get_trace_call_result_primary()
+
+            dict_k_attribute_v_data = DataIntermediateInterpretable(interpretable).get_dict()
+
+            dict_k_attribute_v_data__filtered = {k: v for k, v in dict_k_attribute_v_data.items() if
+                                                 k in dict_k_attribute_v_attribute_name}
+
+            """
+            Notes:
+                Rich styling:
+                    Styles for "style" can be found at https://rich.readthedocs.io/en/stable/style.html 
+                    Colors for "style" can be found at https://rich.readthedocs.io/en/stable/appendix/colors.html
+            """
+            if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                # Removes empty dict string
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] = (
+                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] if
+                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] else ""
+                )
+
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE]: Text = Text(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
+                        dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE]),
+                    style="rgb(255,0,0)",  # Red
+                    # style="dark_orange",
+                )
+
+            if dict_k_attribute_v_data__filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                # Removes empty list string
+                dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] = (
+                    dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] if
+                    dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] else ""
+                )
+
+                dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT]: Text = Text(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].str_format.format(
+                        dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT]),
+                    # style="rgb(255,0,0)",  # Red
+                    style="dark_orange",
+                )
+
+            if (dict_k_attribute_v_data__filtered.get(Attribute.CODE_SPACING, None) is not None and
+                    dict_k_attribute_v_data__filtered.get(Attribute.CODE, None) is not None and
+                    _bool_code_exists):
+                r"""
+                Notes:
+                    Themes:
+                        Possible themes for "theme" can be found at:
+                            .../Lib/site-packages/rich/syntax.py
+                        Look for the dict STYLE_MAP
+
+                        To see the style go to https://pygments.org/styles/
+
+                        Example:
+                            theme="native"
+                            theme="monokai"  # Which is the default
+
+                    The first arg in Syntax(...) is ignored when using highlight and there
+                    is no official documentation for highlight online. 
+                """
+
+                text_code_spacing: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
+                    dict_k_attribute_v_data__filtered[Attribute.CODE_SPACING]
+                )
+
+                # *** THE ONLY WAY TO REMOVE THE NEWLINE AND NOT THE SPACES ***
+                text_code_spacing = text_code_spacing.split()[0]
+
+                dict_k_attribute_v_data__filtered.pop(Attribute.CODE_SPACING)
+
+                text_code: Text = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
+                    dict_k_attribute_v_data__filtered[Attribute.CODE]
+                )
+
+                text_code.rstrip()  # Removes newline that was added for reason
+
+                # ----- Styling ----- #
+
+                # Function definition
+                if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
+                        trace_call_result.get_event() == constants.Event.LINE):
+                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
+
+                # Function call
+                elif (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
+                      trace_call_result.get_event() == constants.Event.CALL):
+                    text_code.stylize("on rgb(0,95,0)")  # dark_green
+
+                # Class definition
+                elif (trace_call_result.get_python_keyword() == constants.Keyword.CLASS and
+                      trace_call_result.get_event() == constants.Event.LINE):
+                    # text_code.stylize("on rgb(175,0,215)")  # dark_violet
+                    text_code.stylize("on rgb(0,0,135)")  # dark_blue
+
+                # Fallback color for all Event.CALL
+                elif trace_call_result.get_event() == constants.Event.CALL:
+                    text_code.stylize("on rgb(0,95,0)")  # dark_green
+
+                ##########
+
+                text_code_spacing.append_text(text_code)
+
+                if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+                    text_code_spacing.append_text(dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE])
+
+                    dict_k_attribute_v_data__filtered.pop(Attribute.DICT_K_VARIABLE_V_VALUE)
+
+                if dict_k_attribute_v_data__filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
+                    text_code_spacing.append_text(dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT])
+
+                    dict_k_attribute_v_data__filtered.pop(Attribute.LIST_STR_COMMENT)
+
+                dict_k_attribute_v_data__filtered[Attribute.CODE] = text_code_spacing
+
+                # print(f"{text_code_spacing.markup=}")  # DEBUGGING: Check what the markup is
+
+            list_data: List[str] = [(str(data) if isinstance(data, int) else data)
+                                    for data in dict_k_attribute_v_data__filtered.values()]
+
+            table.add_row(*list_data)
+
+            # DEBUGGING: If the width of the table is too big, then it will reset the console's width to 79
+            # print(f"{self.console.size=}")
+
+        console.print(table)
+
+    def _do_rich_line_of_code_analysis(self, console: Console):
+        """
+        Do the rich version of line of code analysis
+
+        :param console:
+        :return:
+        """
+        console.print(Text(STR_LINE_OF_CODE_ANALYSIS_HEADER, style=RICH_TABLE_STYLE))
+
+        # WARNING: Suboptimal since this calculation was made before
+        __width_additional = len("".join({
+            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
+            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+        }.values()))
+
+        for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
+            table_shared = Table(
+                expand=True,
+                style=RICH_TABLE_STYLE,
+                width=(
+                        self.code_analyzer.length_line_most_chars_with_comments +
+                        __width_additional
+                ),
+            )
+
+            table_shared.add_column(
+                "Name",
+                header_style=RICH_TABLE_HEADER_STYLE,
+                style=RICH_TABLE_STYLE
+            )
+
+            table_shared.add_column(
+                "Value",
+                header_style=RICH_TABLE_HEADER_STYLE,
+                style=RICH_TABLE_STYLE
+            )
+
+            ########################
+
+            trace_call_result = interpretable.get_trace_call_result_primary()
+
+            count = len(list_interpretable)
+
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis_shared():
+
+                text_key: Text = Text(str(DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name))
+
+                text_value: Text = Text(str(DataIntermediateInterpretable(interpretable).get_dict().get(attribute)))
+
+                # Stuff that can't be found in a DataIntermediateInterpretable's dict
+                if attribute == Attribute.CALL_COUNT:
+                    text_value = Text(str(count))
+
+                # ----- Styling ----- #
+
+                # Filename
+                if attribute == Attribute.FILENAME_FULL:
+                    text_key.stylize("bright_magenta")  # rgb(175,0,255)
+
+                # Line
+                elif attribute == Attribute.LINE_NUMBER:
+                    pass
+
+                # Code
+                elif attribute == Attribute.CODE:
+                    text_key.stylize("bright_green")
+                    text_value = Syntax("", lexer=RICH_SYNTAX_LEXER, theme=RICH_SYNTAX_THEME).highlight(
+                        str(text_value)
+                    )
+                    text_value.rstrip()  # Removes newline that was added for reason
+
+                # Call Count
+                elif attribute == Attribute.CALL_COUNT:
+                    text_key.stylize("bright_cyan")
+
+                ##########
+
+                table_shared.add_row(text_key, text_value)
+
+            console.print(table_shared)
+
+            ########################
+
+            table_body = Table(
+                expand=True,
+                style=RICH_TABLE_STYLE,
+                width=(
+                        self.code_analyzer.length_line_most_chars_with_comments +
+                        __width_additional
+                ),
+            )
+
+            for attribute in self._get_list_attribute_allowed_line_of_code_analysis():
+                table_body.add_column(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name,
+                    header_style=RICH_TABLE_HEADER_STYLE,
+                    style=RICH_TABLE_STYLE,
+                )
+
+            for interpretable_inner in list_interpretable:
+                data_intermediate_interpretable = DataIntermediateInterpretable(interpretable_inner)
+
+                dict_data_intermediate_interpretable = data_intermediate_interpretable.get_dict()
+
+                list_data = [str(dict_data_intermediate_interpretable.get(attribute)) for attribute in
+                             self._get_list_attribute_allowed_line_of_code_analysis()]
+
+                table_body.add_row(*list_data)
+
+            console.print(table_body)
+            console.print("\n")
+
+    def print_debug(self):
+        """
+        A debugging print_function used to figure out where bugs are
+
+        :return:
+        """
+
+        print("{}\n{}\n{}\n".format(BORDER_SPACE_PRIMARY, "DEBUG PRINT", BORDER_SPACE_PRIMARY))
+
+        for _inter in self.code_analyzer.list_interpretable:
+            for _tra in _inter.list_trace_call_result:
+                print(_tra, _tra.get_event())
+            print()
+
     def export_to_txt(self):
         """
         Write the non rich version of the code analysis to a file
@@ -804,7 +866,7 @@ class CodeAnalyzerPrinter:
         basename = os.path.basename(sys.argv[0])
         basename_no_ext = os.path.splitext(basename)[0]
 
-        output_name = f"{basename_no_ext}_execution_analysis.txt"
+        output_name = f"{basename_no_ext}_code_analysis.txt"
 
         with open(output_name, "w") as file:
             self.print(print_function=file.write, style=None)
@@ -827,7 +889,7 @@ class CodeAnalyzerPrinter:
         basename = os.path.basename(sys.argv[0])
         basename_no_ext = os.path.splitext(basename)[0]
 
-        output_name = f"{basename_no_ext}_rich_execution_analysis.html"
+        output_name = f"{basename_no_ext}_code_analysis_rich.html"
 
         console.save_html(output_name)  # By default clear=True to clear the buffer
 

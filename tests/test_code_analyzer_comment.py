@@ -93,13 +93,13 @@ def test_code_analyzer_comment_next_basic():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_line_next({"Comment 1": "Hello", "Random Comment": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 1": "Hello", "Random Comment": "World"})
     x = 1
 
-    code_analyzer.record_comment_for_line_next({"Comment 2": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 2": "Hello"})
     y = 2
 
-    code_analyzer.record_comment_for_line_next({"Comment 3": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 3": "World"})
     z = x + y
 
     code_analyzer.stop()
@@ -123,7 +123,7 @@ def test_code_analyzer_comment_next_as_last_line_of_code():
     code_analyzer.start()
 
     x = 2
-    code_analyzer.record_comment_for_line_next({"This should be on x = 2": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"This should be on x = 2": "Hello"})
 
     code_analyzer.stop()
     code_analyzer.print()
@@ -143,16 +143,16 @@ def test_code_analyzer_comment_next_multiple():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_line_next({"Comment 1": "Hello"})
-    code_analyzer.record_comment_for_line_next({"Comment 2": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 1": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 2": "World"})
     x = 1
 
-    code_analyzer.record_comment_for_line_next({"Comment 3": "Hello"})
-    code_analyzer.record_comment_for_line_next({"Comment 4": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 3": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 4": "World"})
     y = 2
 
-    code_analyzer.record_comment_for_line_next({"Comment 5": "Hello"})
-    code_analyzer.record_comment_for_line_next({"Comment 6": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 5": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"Comment 6": "World"})
     z = x + y
 
     code_analyzer.stop()
@@ -174,13 +174,13 @@ def test_code_analyzer_comment_previous_basic():
     code_analyzer.start()
 
     x = 1
-    code_analyzer.record_comment_for_line_previous({"x": x})
+    code_analyzer.record_comment_for_interpretable_previous({"x": x})
 
     y = 2
-    code_analyzer.record_comment_for_line_previous({"y": y})
+    code_analyzer.record_comment_for_interpretable_previous({"y": y})
 
     z = x + y
-    code_analyzer.record_comment_for_line_previous({"z": z})
+    code_analyzer.record_comment_for_interpretable_previous({"z": z})
 
     code_analyzer.stop()
     code_analyzer.print()
@@ -201,7 +201,7 @@ def test_code_analyzer_comment_previous_as_first_line_of_code():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_line_previous({"This should be on x = 2": "Hello"})
+    code_analyzer.record_comment_for_interpretable_previous({"This should be on x = 2": "Hello"})
     x = 2
 
     code_analyzer.stop()
@@ -226,13 +226,13 @@ def test_code_analyzer_comment_overwrite():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_line_next({"Hello": "No"})
-    code_analyzer.record_comment_for_line_next({"World": "More"})
-    code_analyzer.record_comment_for_line_next({"Dude": "Memes"})
+    code_analyzer.record_comment_for_interpretable_next({"Hello": "No"})
+    code_analyzer.record_comment_for_interpretable_next({"World": "More"})
+    code_analyzer.record_comment_for_interpretable_next({"Dude": "Memes"})
     x = 42
-    code_analyzer.record_comment_for_line_previous({"Hello": "The"})
-    code_analyzer.record_comment_for_line_previous({"World": "Flying"})
-    code_analyzer.record_comment_for_line_previous({"Dude": "Cat"})
+    code_analyzer.record_comment_for_interpretable_previous({"Hello": "The"})
+    code_analyzer.record_comment_for_interpretable_previous({"World": "Flying"})
+    code_analyzer.record_comment_for_interpretable_previous({"Dude": "Cat"})
 
     code_analyzer.stop()
     code_analyzer.print()
@@ -254,7 +254,7 @@ def test_code_analyzer_comment_next_function_empty():
     x = "hello"
 
     def do_stuff():
-        code_analyzer.record_comment_for_line_next({'Comment on "do_stuff" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_next({'Comment on "do_stuff" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -279,7 +279,7 @@ def test_code_analyzer_comment_next_function_as_last_line_in_function():
 
     def do_stuff():
         dude = 42
-        code_analyzer.record_comment_for_line_next({'Comment on "dude = 42" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_next({'Comment on "dude = 42" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -302,7 +302,7 @@ def test_code_analyzer_comment_previous_function_empty():
     x = "hello"
 
     def do_stuff():
-        code_analyzer.record_comment_for_line_previous({'Comment on "do_stuff" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_previous({'Comment on "do_stuff" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -324,20 +324,20 @@ def test_code_analyzer_comment_function_advanced():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_line_next({'Comment on "add" function definition': "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({'Comment on "add" function definition': "Hello"})
 
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_line_previous({'Comment on "add" function call': "World"})
+        code_analyzer.record_comment_for_interpretable_previous({'Comment on "add" function call': "World"})
 
         result = x + y
-        code_analyzer.record_comment_for_line_previous({'Comment on "result"': result})
+        code_analyzer.record_comment_for_interpretable_previous({'Comment on "result"': result})
 
-        code_analyzer.record_comment_for_line_next({'Comment on "return result"': result})
+        code_analyzer.record_comment_for_interpretable_next({'Comment on "return result"': result})
         return result
 
-    code_analyzer.record_comment_for_line_next({'This should be on "result_2" (1)': "Hello World"})
+    code_analyzer.record_comment_for_interpretable_next({'This should be on "result_2" (1)': "Hello World"})
     result_2 = add(2, 3)
-    code_analyzer.record_comment_for_line_previous({'This should be on "result_2" (2)': result_2})
+    code_analyzer.record_comment_for_interpretable_previous({'This should be on "result_2" (2)': result_2})
 
     code_analyzer.stop()
     code_analyzer.print()

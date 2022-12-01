@@ -30,9 +30,9 @@ code_analyzer = CodeAnalyzer()
 @code_analyzer
 def main():
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_line_next({"Random Comment": "Good code!"})
+        code_analyzer.record_comment_for_interpretable_next({"Random Comment": "Good code!"})
         result = x + y
-        code_analyzer.record_comment_for_line_previous({"result": result})
+        code_analyzer.record_comment_for_interpretable_previous({"result": result})
 
         for i in range(1):
             x = i
