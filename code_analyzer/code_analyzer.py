@@ -272,7 +272,7 @@ class CodeAnalyzer:
 
         :return:
         """
-        print(self._index_frame_object)
+        # print(self._index_frame_object)
 
         self.list_interpretable.clear()
 

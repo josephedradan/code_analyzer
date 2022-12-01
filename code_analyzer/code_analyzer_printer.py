@@ -435,7 +435,9 @@ class CodeAnalyzerPrinter:
                 if attribute == Attribute.CALL_COUNT:
                     value = count
 
-                # Colorama stuff
+                #####
+
+                # Colorama styling
                 if style == Style.COLORAMA:
 
                     if attribute == Attribute.FILENAME_FULL:
@@ -449,6 +451,8 @@ class CodeAnalyzerPrinter:
 
                     elif attribute == Attribute.CALL_COUNT:
                         key = colorama.Fore.BLUE + key + colorama.Style.RESET_ALL
+
+                #####
 
                 dict_shared[key] = value
 

@@ -40,17 +40,32 @@ you will get a simple print analysis of your code in your terminal or in a file.
     code_analyzer.stop()
     code_analyzer.print()
 
-Or just check the examples folder...
+Or just look at the other examples in examples folder.
 
-#### Notes
-
-In the output of a print or an export:
-Blue background behind code is a callable's definition
-Green background behind code is a callable being executed
 
 #### Output
 ![example_recursive.png](./images/example_recursive.png)
+#### Notes
 
+In the output of a print (Such as in the image above):
+
+* Blue foreground code is a callable's definition.
+* Green foreground code is a callable being executed.
+* Red background code is a result of one of the method calls below:
+    * .record_comment_for_interpretable_next(...) 
+    * .record_comment_for_interpretable_previous(...)
+    
+In the output of a rich export (such as the .html files in the examples folder):
+
+* Blue background code is a callable's definition.
+* Green background code is a callable being executed.
+* Red background code is a result of one of the method calls below with an argument having the type of dict:
+    * .record_comment_for_interpretable_next(...) 
+    * .record_comment_for_interpretable_previous(...)
+    
+* Orange background code is a result of one of the method calls below with an argument having the type that is not a dict:
+    * .record_comment_for_interpretable_next(...) 
+    * .record_comment_for_interpretable_previous(...)
 
 __TODO:__
 
