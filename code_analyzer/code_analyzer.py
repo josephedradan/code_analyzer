@@ -58,13 +58,62 @@ Reference:
             What my code is based on
         Reference:
             https://youtu.be/pjq3QOxl9Ok?t=2720
+
+    The unreasonable effectiveness of sys.settrace (and sys.setprofile)
+        Notes:
+            Cheat Sheet
+                sys.settrace(fn) and sys.setprofile(fn) to set fn as the callback.
+                sys.settrace(None) and sys.setprofile(None) to clear it.
+                The trace function has the function signature (frame, event, arg).
+                settrace events: call, return, line, exception, opcode
+                setprofile events: call, c_call, return, c_return, c_exception
+                The return value is used in all but return to specify the new local trace function for settrace, and is unused for setprofile.
+                arg depends on the event
+                    c_call, c_return, c_exception: C function object
+                    return: The return value, None for exceptions
+                    exception: (exception, value, traceback) tuple
+                frame fields
+                    f_back: previous frame
+                    f_code: code object
+                    f_locals: as title
+                    f_globals: as title
+                    f_builtins: built-in names
+                    f_lasti: instruction, index into bytecode string
+                    f_trace: writable, set the trace function for this frame
+                    f_trace_lines: writable, trigger trace for each line
+                    f_trace_opcodes: writable, trigger trace for each opcode
+                    f_lineno: writable, current line number
+                code fields (immutable)
+                    co_name: function name
+                    co_argcount: positional arguments
+                    co_posonlargcount: positional-only arguments
+                    co_kwonlyargcount: keyword-only arguments
+                    co_nlocals: # of local variables used by the function, including args
+                    co_varnames: tuple with names of local variables
+                    co_cellvars: tuple with local vars referred to by nested functions
+                    co_freevars: tuple with free variables
+                    co_code: bytecode as a string
+                    co_consts: tuple with literals used by bytecode
+                    first item is docstring or None for functions
+                    co_names: tuple with names used by bytecode
+                    co_filename: origin filename
+                    co_firstlineno: first line number of function
+                    co_lnotab: maps bytecode offsets to line numbers
+                    co_flags: flags for interpreter
+                        0x04: uses *arguments
+                        0x08: uses **keywords
+                        0x20: generator
+                        0x2000: from future import division
+        Reference:
+            https://explog.in/notes/settrace.html
+
 """
 import sys
 from collections import defaultdict
 from enum import Enum, auto
 from functools import wraps
 from types import TracebackType, FrameType
-from typing import Union, List, Dict, Callable
+from typing import Union, List, Dict, Callable, Any
 
 from code_analyzer import constants
 from code_analyzer.code_analyzer_printer import CodeAnalyzerPrinter
@@ -81,8 +130,8 @@ class CodeAnalyzer:
 
         """
         STOP = auto()
-        ADD_DICT_FOR_INTERPRETABLE_NEXT = auto()
-        ADD_DICT_FOR_INTERPRETABLE_PREVIOUS = auto()
+        RECORD_COMMENT_FOR_INTERPRETABLE_NEXT = auto()
+        RECORD_COMMENT_FOR_INTERPRETABLE_PREVIOUS = auto()
         HIDE_LINE_NEXT = auto()
         HIDE_LINE_PREVIOUS = auto()
 
@@ -201,13 +250,13 @@ class CodeAnalyzer:
             code_analyzer.start()
             ... # CODE BEING ANALYZED IS HERE
             code_analyzer.stop() 
-            code_analyzer.print_function()
+            code_analyzer.print()
         
         If the index is 2, then the code that should be analyzed probably follows the format below:
             code_analyzer = CodeAnalyzer()
             with code_analyzer as ca:
                 ... # CODE BEING ANALYZED IS HERE
-            code_analyzer.print_function()
+            code_analyzer.print()
         
         """
         self._index_frame_object: Union[int, None] = None
@@ -253,9 +302,11 @@ class CodeAnalyzer:
 
         self.length_line_most_chars_with_comments: int = 0
 
+        self.length_line_most_chars_with_comments_with_dict_k_variable_v_value: int = 0
+
         # self.trace_call_result_deepest: Union[TraceCallResult, None] = None
 
-    def __reset(self):
+    def _reset(self):
         """
         Will reset most of the variables of this object so that this object can be used again
 
@@ -328,6 +379,8 @@ class CodeAnalyzer:
 
         self.dict_k_interpretable_v_list_interpretable.clear()
         self.length_line_most_chars = 0
+        self.length_line_most_chars_with_comments = 0
+        self.length_line_most_chars_with_comments_with_dict_k_variable_v_value = 0
         # self.trace_call_result_deepest = None
 
     def __enter__(self):
@@ -383,12 +436,12 @@ class CodeAnalyzer:
 
         :return:
         """
-        self.__reset()
+        self._reset()
 
         # Initialize the first scope
         self._list_stack_scope.append(Scope())
 
-        def trace_function_callback(frame: FrameType, event: str, arg):
+        def trace_function_callback(frame: FrameType, event: str, arg: Any):
             """
                 Custom trace function
 
@@ -453,26 +506,39 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################
 
-            # print_function("-" * 10)
-            # print_function("scope_current:", scope_current)
-            # print_function("scope_current depth:", scope_current.get_indent_depth_scope())
-            # print_function("scope_current.get_interpretable()", scope_current.get_interpretable())
-            # print_function("interpretable_current:", interpretable_current)
-            # print_function("frame:", frame)
-            # print_function("frame.locals:", frame.f_locals)
-            # print_function("str_event:", event)
-            # print_function("self:", self_from_frame_locals)
-            # print_function("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            # print("-" * 10)
+            # print("scope_current:", scope_current)
+            # print("scope_current depth:", scope_current.get_indent_depth_scope())
+            # print("scope_current.get_interpretable()", scope_current.get_interpretable())
+            # print("interpretable_current:", interpretable_current)
+            # print("frame:", frame)
+            # print("frame.locals:")
+            # pprint.pprint(frame.f_locals)
+            # print("str_event:", event)
+            # print("arg", arg)
+            # print("self:", self_from_frame_locals)
+            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
             # _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            # print_function("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
             #     _trace_call_result_new.code_line_strip,
             #     "|||",
             #     _trace_call_result_new.str_event)
             # )
-            # print_function("trace_call_result_previous:\n\t{} ||| {}".format(
+            # print("trace_call_result_previous:\n\t{} ||| {}".format(
             #     trace_call_result_previous,
             #     trace_call_result_previous.str_event if trace_call_result_previous else "")
             # )
+            # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
+            # print("frame.f_code.co_varnames", frame.f_code.co_varnames)  # Current scope variables
+            # print("frame.f_code.co_cellvars", frame.f_code.co_cellvars)  # ?
+            # print("frame.f_code.co_freevars", frame.f_code.co_freevars)  # ?
+            #
+            # print("frame.f_code.co_names", frame.f_code.co_names)  # Functions in the current callable scope
+            # print("frame.f_code.co_consts", frame.f_code.co_consts)  # Values of variables, no variable name
+            # print("frame.f_code.co_code", frame.f_code.co_code)  # Byte code
+            # print("frame.f_code.co_firstlineno", frame.f_code.co_firstlineno)  # Line number of the start of the callable's scope
+            # print("frame.f_lineno", frame.f_lineno)  # Current Line # of code being executed
+            # print("frame.f_globals", frame.f_globals)  # Current global variables
 
             ####################
             # DEBUGGING HEAD END
@@ -542,7 +608,7 @@ class CodeAnalyzer:
                 ####################
                 # Interpretable RETURN
                 ####################
-                if trace_call_result_new.get_event() == constants.Event.RETURN:  # TODO: CHECK trace_call_result_new.get_event() instead of str_event .also constants.Event.RETURN.value
+                if trace_call_result_new.get_event() == constants.Event.RETURN:
                     """ 
                     
                     Notes:
@@ -812,19 +878,17 @@ class CodeAnalyzer:
                         RECALL THAT AN INTERPRETABLE MUST EXIST PAST THIS CONDITION
                         
                     Notes:
-                        Recall that the scope given to creating a interpretable automatically
-                        adds the interpretable to that scope. 
+                        Recall that the scope given to the init of a interpretable automatically
+                        adds that interpretable to the scope. 
                         
-                        Recall that the interpretable created if the condition below is met, is the 
-                        decorator interpretable which must be removed because it's unrelated to the code being 
-                        analyzed.
+                        Recall that the decorator interpretable must be removed from the scope because it's unrelated 
+                        to the code being analyzed.
                         
                         The below will remove the decorator interpretable from the current scope and
                         not add the interpretable to this object's list of interpretables.
-                    
                     """
                     if self._decorator_used_do_conditions is True:
-                        # Note: When debugging if you don't print_function this, the code will work
+                        # Note: When debugging if you don't print the below, the code will work
                         scope_current.pop_interpretable()
                     else:
                         self.list_interpretable.append(interpretable_current)
@@ -868,7 +932,7 @@ class CodeAnalyzer:
                     the current interpretable because the current str_event is a return so no new Tnterpretables 
                     and therefore TraceCallResult objects will be made past this point.
                     """
-                    interpretable_current.update_list_comment_through_list(
+                    interpretable_current.get_comment_container().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
@@ -876,7 +940,7 @@ class CodeAnalyzer:
                 else:
 
                     # Exhaust list of comment (The list may be empty)
-                    interpretable_current.update_list_comment_through_list(
+                    interpretable_current.get_comment_container().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
@@ -931,8 +995,8 @@ class CodeAnalyzer:
                         the Interpretable was already popped from the scope_current and that same Interpretable
                         was never added to self.list_interpretable so no popping was needed from that list
                         
-                        This will remove the decorator TraceCallResult and prevent the condition from being
-                        True. 
+                        The below will remove the decorator TraceCallResult object and prevent the condition 
+                        from being True because this process is special.
                     """
                     if self._decorator_used_do_conditions is True:
                         self._list_trace_call_result_raw.pop()
@@ -1019,19 +1083,22 @@ class CodeAnalyzer:
                             self._count_interpretable_next_visibility_false += 1
 
                     # If the method record_dict_for_line_next() was called
-                    if _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT:
+                    if _procedure == CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_NEXT:
                         """
                         Process:
-                            2. Get the dict of the variable and its value
+                            2. Get the ContainerComment object of the interpretable
                             3A. If the previous trace_call_result_previous's str_event was a constants.Event.RETURN
                                 (It's probably not possible to get in this route because of )
                             3A1. Get the top interpretable in the current scope
-                            3A2. If the top interpretable of the current scope does not exist, then get the parent scope's
-                                top interpretable instead
-                            3B. (Standard behavior) Add _dict_k_variable_v_value to update the next interpretable 
+                            3A2. If the top interpretable of the current scope does not exist, then get the parent 
+                                scope's top interpretable instead and add _container_comment to the 
+                                next interpretable's ContainerComment
+                            3B. (Standard behavior) Add _container_comment to the next interpretable's ContainerComment
                         """
 
-                        _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
+                        _container_comment = (
+                            _interpretable_popped.get_comment_container()
+                        )  # 2.
 
                         if trace_call_result_previous.get_event() == constants.Event.RETURN:  # 3A
 
@@ -1047,23 +1114,23 @@ class CodeAnalyzer:
 
                             # 3A2. If the top interpretable exist by now, update its dict
                             if _interpretable_top is not None:
-                                _interpretable_top.update_dict_k_variable_v_value(
-                                    _dict_k_variable_v_value
+                                _interpretable_top.get_comment_container().add(
+                                    _container_comment
                                 )
 
                         # 3B. Standard behavior
                         else:
                             self._list_comment_for_trace_call_result_next.append(
-                                _dict_k_variable_v_value)
+                                _container_comment)
 
                         # self._bool_record_dict_for_line_call_is_trace_call_result_previous = True  # Why is this here?  # TODO: FIGURE THIS OUT
 
                     # If the method record_dict_for_line_previous() was called
-                    elif _procedure == CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS:
+                    elif _procedure == CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_PREVIOUS:
                         """
                         Process:
-                            2. Steal the popped Interpretable's comment and add it to
-                                self.list_dict_k_variable_v_value_for_trace_call_result_next because
+                            2. Get the popped Interpretable's ContainerComment and add it to
+                                self._list_comment_for_trace_call_result_next because
                                 this Interpretable is popped and so that dict needs to be moved to the next
                                 Interpretable 
                             3A. Get the the most recent interpretable added to the current scope
@@ -1089,10 +1156,10 @@ class CodeAnalyzer:
                         The Interpretable popped, which has Event.LINE, has a record_dict_for_line_previous()
                         may have a comment that is from record_dict_for_line_next()
                         """
-                        _dict_k_variable_v_value = _interpretable_popped.get_dict_k_variable_v_value()  # 2.
+                        _container_comment = _interpretable_popped.get_comment_container()  # 2.
 
                         self._list_comment_for_trace_call_result_next.append(
-                            _dict_k_variable_v_value)  # 2.
+                            _container_comment)  # 2.
 
                         # Previous interpretable from the current scope
                         _interpretable_top = scope_current.get_interpretable_top()  # 3.
@@ -1139,7 +1206,7 @@ class CodeAnalyzer:
 
                         # 4.
                         if _interpretable_top:
-                            _interpretable_top.update_list_comment_through_list(
+                            _interpretable_top.get_comment_container().add_by_exhausting(
                                 self._list_comment_for_trace_call_result_previous
                             )
 
@@ -1175,8 +1242,8 @@ class CodeAnalyzer:
             # DEBUGGING TAIL START
             ####################
 
-            # print_function(f"SELF COUNTER: {self.__depth_scope_count_self}")
-            # print_function("-" * 10)
+            # print(f"SELF COUNTER: {self.__depth_scope_count_self}")
+            # print("-" * 10)
 
             ####################
             # DEBUGGING TAIL END
@@ -1273,8 +1340,8 @@ class CodeAnalyzer:
                         The comment must be moved to the actual top Interpretable
                         """
                         _interpretable_top_actual: Interpretable = self.list_interpretable[-1]
-                        _interpretable_top_actual.update_dict_k_variable_v_value(
-                            _interpretable_top_popped.dict_k_variable_v_value
+                        _interpretable_top_actual.get_comment_container().add(
+                            _interpretable_top_popped.get_comment_container()
                         )
 
                     self._decorator_used = False
@@ -1286,7 +1353,7 @@ class CodeAnalyzer:
                     top interpretable
                     """
                     _interpretable_top: Interpretable = self.list_interpretable[-1]
-                    _interpretable_top.update_list_comment_through_list(
+                    _interpretable_top.get_comment_container().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
@@ -1329,12 +1396,24 @@ class CodeAnalyzer:
 
             length_line_with_comments = (
                     length_line +
-                    len(str(interpretable.get_dict_k_variable_v_value())) +
-                    len(str(interpretable.get_list_str_comment()))
+                    len(interpretable.get_comment_container())
             )
 
             self.length_line_most_chars_with_comments = max(self.length_line_most_chars_with_comments,
                                                             length_line_with_comments)
+
+            length_dict_k_variable_v_value = "{}: {}"
+
+            length_line_with_comments_with_dict_k_variable_v_value = (
+                    length_line_with_comments +
+                    len(str(
+                        trace_call_result_primary.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()))
+            )
+
+            self.length_line_most_chars_with_comments_with_dict_k_variable_v_value = max(
+                self.length_line_most_chars_with_comments_with_dict_k_variable_v_value,
+                length_line_with_comments_with_dict_k_variable_v_value,
+            )
 
     def record_comment_for_interpretable_next(self, comment: Union[constants.COMMENT]) -> None:
         """
@@ -1346,7 +1425,7 @@ class CodeAnalyzer:
         """
         self._list_comment_for_trace_call_result_next.append(comment)
 
-        self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_NEXT)
+        self._list_procedure.append(CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_NEXT)
 
     def record_comment_for_interpretable_previous(self, comment: Union[constants.COMMENT]) -> None:
         """
@@ -1358,7 +1437,7 @@ class CodeAnalyzer:
 
         self._list_comment_for_trace_call_result_previous.append(comment)
 
-        self._list_procedure.append(CodeAnalyzer._Procedure.ADD_DICT_FOR_INTERPRETABLE_PREVIOUS)
+        self._list_procedure.append(CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_PREVIOUS)
 
     def hide_interpretable_previous(self, amount: Union[int] = 1):
         """

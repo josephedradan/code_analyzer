@@ -389,7 +389,7 @@ def test_code_analyzer_with_deep():
 
 def test_code_analyzer_decorator():
     """
-    Test using the CodeAnalyser object as a decorator
+    Test using the CodeAnalzer object as a decorator
 
     Notes:
         In the example below, there should be 8 interpretables in total

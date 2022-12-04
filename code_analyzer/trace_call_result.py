@@ -33,10 +33,15 @@ Explanation:
 Tags:
 
 Reference:
-
+    How to patch Python bytecode
+        Notes:
+            Code object stuff, but primarily on the bytecode
+        Reference:
+            https://rushter.com/blog/python-bytecode-patch/
 """
 from __future__ import annotations
 
+import copy
 import linecache
 import re
 from pathlib import Path
@@ -86,17 +91,31 @@ class TraceCallResult:
 
         """
         Frame related stuff
+        
+        IMPORTANT NOTES:
+            RECALL THAT FrameType OBJECTS ARE REUSED, SO VALUES MUST BE COPIED IMMEDIATELY WHEN
+            THE TRACE FUNCTION HAS BEEN CALLED OTHERWISE ATTRIBUTE VALUES FROM THE FRAME OBJECT WILL BE
+            WRONG!
         """
+
+        # The below value must be copied because the frame is shared and the value might change later on
+        self.frame_f_locals_instance_current = copy.copy(self.frame.f_locals)
 
         self.filename_full: str = self.frame.f_code.co_filename
 
         self.path_object: Path = Path(self.filename_full)
-        # print_function("ABS FILE PATH", self.path_object.absolute())
+        # print("ABS FILE PATH", self.path_object.absolute())
 
         self.filename_short: str = self.path_object.name
 
         self.code_name: str = self.frame.f_code.co_name
 
+        """
+        frame.f_code.co_firstlineno gets the scope's starting line
+        
+        Notes:
+            The below value must be copied because the frame is shared and the value might change later on
+        """
         self.code_line_number: int = self.frame.f_lineno
 
         self.code_object: CodeType = self.frame.f_code
@@ -163,9 +182,9 @@ class TraceCallResult:
         # DEBUGGING START
         ####################
 
-        # print_function("--")
-        # print_function(self.code_line_strip)
-        # print_function(
+        # print("--")
+        # print(self.code_line_strip)
+        # print(
         #     "SCOPE INDENT DEPTH CORRECTED: {}\n"
         #     "INDENT DEPTH RELATIVE: {}\n"
         #     "INDENT DEPTH OFFEST: {}\n".format(
@@ -175,7 +194,7 @@ class TraceCallResult:
         #
         #     )
         # )
-        # print_function("--")
+        # print("--")
 
         ####################
         # DEBUGGING END
@@ -298,10 +317,10 @@ class TraceCallResult:
         match_2 = re.match(_PYTHON_KEY_WORD_REGEX_PATTERN_NO_SPACE, line)
 
         if match_1 is not None:
-            # print_function("KEY WORD", match_1)
+            # print("KEY WORD", match_1)
             return match_1[0].strip()
         elif match_2 is not None:
-            # print_function("KEY WORD", match_2)
+            # print("KEY WORD", match_2)
             return match_2[0].strip()
 
         return None
@@ -314,3 +333,44 @@ class TraceCallResult:
 
     def get_event(self) -> Event:
         return Event(self.str_event)
+
+    def get_frame_f_locals(self) -> dict:
+        return self.frame_f_locals_instance_current
+
+    def get_frame_f_locals_filtered_by_frame_f_code_co_varnames(self) -> dict:
+        """
+        Get the current instance of frame.f_locals when this object was created filtered by the variables from
+        frame.f_code.co_varnames
+
+        Basically, get the union between the keys of frame.f_locals (dict) and the variables in
+        frame.f_code.co_varnames (tuple)
+
+        :return:
+        """
+        dict_temp = {k: self.frame_f_locals_instance_current[k] for k in self.code_object.co_varnames
+                     if k in self.frame_f_locals_instance_current}
+
+        return dict_temp
+
+    def get_frame_f_locals_filtered_by_frame_f_code_co_varnames_difference(self) -> dict:
+
+        interpretable_previous = self.interpretable.scope_parent.get_interpretable(-2)
+
+        if interpretable_previous is None:
+            return self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+
+        trace_call_result_interpretable_previous: TraceCallResult = interpretable_previous.get_trace_call_result_primary()
+
+        dict_frame_f_locals_filtered_by_frame_f_code_co_varnames = (
+            self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+        )
+
+        dict_difference = dict((
+                set(dict_frame_f_locals_filtered_by_frame_f_code_co_varnames.items()) ^
+                set(trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_frame_f_code_co_varnames().items())
+        ))
+
+        dict_difference_filtered = {k: v for k, v in dict_difference.items()
+                                    if k in dict_frame_f_locals_filtered_by_frame_f_code_co_varnames}
+
+        return self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()

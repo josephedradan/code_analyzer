@@ -50,12 +50,16 @@ def recursive_complex(current: int, current_next: Union[None, int] = None):
     value = recursive_complex(current - 1, current_next)
 
     if current - value == 1:  # Dank memes
-        recursive_complex(value, value - 1)
+        value = recursive_complex(value, value - 1)
 
+    code_analyzer.record_comment_for_interpretable_next(value)
     return value
 
 
-recursive_complex(10)
+final_value = recursive_complex(10)
+code_analyzer.record_comment_for_interpretable_next(final_value)
+print(final_value)
+
 
 code_analyzer.stop()
 code_analyzer.print()

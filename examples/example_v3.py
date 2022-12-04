@@ -5,6 +5,7 @@ Github: https://github.com/josephedradan
 Date created: 9/28/2022
 
 Purpose:
+    Show how to use this analyzer
 
 Details:
 
@@ -30,7 +31,7 @@ code_analyzer = CodeAnalyzer()
 @code_analyzer
 def main():
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_interpretable_next({"Random Comment": "Good code!"})
+        code_analyzer.record_comment_for_interpretable_next({"Random ContainerComment": "Good code!"})
         result = x + y
         code_analyzer.record_comment_for_interpretable_previous({"result": result})
 

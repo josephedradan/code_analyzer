@@ -54,7 +54,7 @@ def test_code_analyzer_interpretable_if():
     _list_interpretable = code_analyzer.get_list_interpretable()
 
     assert _list_interpretable[-1].get_trace_call_result_primary().get_indent_depth_corrected() == 4
-    assert _list_interpretable[-1].get_execution_count() == 1
+    assert _list_interpretable[-1].get_interpretable_count() == 1
 
 
 def test_code_analyzer_interpretable_recursive():
@@ -83,6 +83,6 @@ def test_code_analyzer_interpretable_recursive():
     _list_interpretable = code_analyzer.get_list_interpretable()
 
     assert _list_interpretable[-2].get_scope_parent().get_indent_depth_scope() == 6
-    assert _list_interpretable[-2].get_execution_count() == 5
+    assert _list_interpretable[-2].get_interpretable_count() == 5
     assert _list_interpretable[-2].get_trace_call_result_primary().get_indent_depth_corrected() == 8
 

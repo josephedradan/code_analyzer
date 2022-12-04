@@ -93,22 +93,22 @@ def test_code_analyzer_comment_next_basic():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 1": "Hello", "Random Comment": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 1": "Hello", "Random ContainerComment": "World"})
     x = 1
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 2": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 2": "Hello"})
     y = 2
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 3": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 3": "World"})
     z = x + y
 
     code_analyzer.stop()
     code_analyzer.print()
 
     for index, interpretable in enumerate(code_analyzer.get_list_interpretable()):
-        dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
+        dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value__comment()
 
-        assert dict_k_variable_v_value.get(f"Comment {index + 1}") is not None
+        assert dict_k_variable_v_value.get(f"ContainerComment {index + 1}") is not None
 
 
 def test_code_analyzer_comment_next_as_last_line_of_code():
@@ -130,7 +130,7 @@ def test_code_analyzer_comment_next_as_last_line_of_code():
 
     _list_interpretable = code_analyzer.get_list_interpretable()
 
-    assert _list_interpretable[0].get_dict_k_variable_v_value()["This should be on x = 2"] == "Hello"
+    assert _list_interpretable[0].get_dict_k_variable_v_value__comment()["This should be on x = 2"] == "Hello"
 
 
 def test_code_analyzer_comment_next_multiple():
@@ -143,23 +143,23 @@ def test_code_analyzer_comment_next_multiple():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 1": "Hello"})
-    code_analyzer.record_comment_for_interpretable_next({"Comment 2": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 1": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 2": "World"})
     x = 1
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 3": "Hello"})
-    code_analyzer.record_comment_for_interpretable_next({"Comment 4": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 3": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 4": "World"})
     y = 2
 
-    code_analyzer.record_comment_for_interpretable_next({"Comment 5": "Hello"})
-    code_analyzer.record_comment_for_interpretable_next({"Comment 6": "World"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 5": "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({"ContainerComment 6": "World"})
     z = x + y
 
     code_analyzer.stop()
     code_analyzer.print()
 
     for index, interpretable in enumerate(code_analyzer.get_list_interpretable()):
-        dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
+        dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value__comment()
         assert len(dict_k_variable_v_value) == 2
 
 
@@ -185,9 +185,9 @@ def test_code_analyzer_comment_previous_basic():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("x") == 1
-    assert code_analyzer.get_list_interpretable()[1].get_dict_k_variable_v_value().get("y") == 2
-    assert code_analyzer.get_list_interpretable()[2].get_dict_k_variable_v_value().get("z") == 3
+    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value__comment().get("x") == 1
+    assert code_analyzer.get_list_interpretable()[1].get_dict_k_variable_v_value__comment().get("y") == 2
+    assert code_analyzer.get_list_interpretable()[2].get_dict_k_variable_v_value__comment().get("z") == 3
 
 
 def test_code_analyzer_comment_previous_as_first_line_of_code():
@@ -209,7 +209,7 @@ def test_code_analyzer_comment_previous_as_first_line_of_code():
 
     _list_interpretable = code_analyzer.get_list_interpretable()
 
-    assert _list_interpretable[0].get_dict_k_variable_v_value()["This should be on x = 2"] == "Hello"
+    assert _list_interpretable[0].get_dict_k_variable_v_value__comment()["This should be on x = 2"] == "Hello"
 
 
 def test_code_analyzer_comment_overwrite():
@@ -237,9 +237,9 @@ def test_code_analyzer_comment_overwrite():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("Hello") == "The"
-    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("World") == "Flying"
-    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value().get("Dude") == "Cat"
+    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value__comment().get("Hello") == "The"
+    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value__comment().get("World") == "Flying"
+    assert code_analyzer.get_list_interpretable()[0].get_dict_k_variable_v_value__comment().get("Dude") == "Cat"
 
 
 def test_code_analyzer_comment_next_function_empty():
@@ -254,7 +254,7 @@ def test_code_analyzer_comment_next_function_empty():
     x = "hello"
 
     def do_stuff():
-        code_analyzer.record_comment_for_interpretable_next({'Comment on "do_stuff" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_next({'ContainerComment on "do_stuff" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -263,7 +263,7 @@ def test_code_analyzer_comment_next_function_empty():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value().get('Comment on "do_stuff" call') == "Nice"
+    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value__comment().get('ContainerComment on "do_stuff" call') == "Nice"
 
 def test_code_analyzer_comment_next_function_as_last_line_in_function():
     """
@@ -279,7 +279,7 @@ def test_code_analyzer_comment_next_function_as_last_line_in_function():
 
     def do_stuff():
         dude = 42
-        code_analyzer.record_comment_for_interpretable_next({'Comment on "dude = 42" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_next({'ContainerComment on "dude = 42" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -288,7 +288,7 @@ def test_code_analyzer_comment_next_function_as_last_line_in_function():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert code_analyzer.get_list_interpretable()[5].get_dict_k_variable_v_value().get('Comment on "dude = 42" call') == "Nice"
+    assert code_analyzer.get_list_interpretable()[5].get_dict_k_variable_v_value__comment().get('ContainerComment on "dude = 42" call') == "Nice"
 
 def test_code_analyzer_comment_previous_function_empty():
     """
@@ -302,7 +302,7 @@ def test_code_analyzer_comment_previous_function_empty():
     x = "hello"
 
     def do_stuff():
-        code_analyzer.record_comment_for_interpretable_previous({'Comment on "do_stuff" call': "Nice"})
+        code_analyzer.record_comment_for_interpretable_previous({'ContainerComment on "do_stuff" call': "Nice"})
 
     y = "world"
     do_stuff()
@@ -311,7 +311,7 @@ def test_code_analyzer_comment_previous_function_empty():
     code_analyzer.stop()
     code_analyzer.print()
 
-    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value().get('Comment on "do_stuff" call') == "Nice"
+    assert code_analyzer.get_list_interpretable()[4].get_dict_k_variable_v_value__comment().get('ContainerComment on "do_stuff" call') == "Nice"
 
 
 def test_code_analyzer_comment_function_advanced():
@@ -324,15 +324,15 @@ def test_code_analyzer_comment_function_advanced():
     code_analyzer = CodeAnalyzer()
     code_analyzer.start()
 
-    code_analyzer.record_comment_for_interpretable_next({'Comment on "add" function definition': "Hello"})
+    code_analyzer.record_comment_for_interpretable_next({'ContainerComment on "add" function definition': "Hello"})
 
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_interpretable_previous({'Comment on "add" function call': "World"})
+        code_analyzer.record_comment_for_interpretable_previous({'ContainerComment on "add" function call': "World"})
 
         result = x + y
-        code_analyzer.record_comment_for_interpretable_previous({'Comment on "result"': result})
+        code_analyzer.record_comment_for_interpretable_previous({'ContainerComment on "result"': result})
 
-        code_analyzer.record_comment_for_interpretable_next({'Comment on "return result"': result})
+        code_analyzer.record_comment_for_interpretable_next({'ContainerComment on "return result"': result})
         return result
 
     code_analyzer.record_comment_for_interpretable_next({'This should be on "result_2" (1)': "Hello World"})
@@ -344,30 +344,30 @@ def test_code_analyzer_comment_function_advanced():
 
     assert (code_analyzer
             .get_list_interpretable()[0]
-            .get_dict_k_variable_v_value()
-            .get('Comment on "add" function definition')) == "Hello"
+            .get_dict_k_variable_v_value__comment()
+            .get('ContainerComment on "add" function definition')) == "Hello"
 
     assert (code_analyzer
             .get_list_interpretable()[1]
-            .get_dict_k_variable_v_value()
+            .get_dict_k_variable_v_value__comment()
             .get('This should be on "result_2" (1)')) == "Hello World"
 
     assert (code_analyzer
             .get_list_interpretable()[1]
-            .get_dict_k_variable_v_value()
+            .get_dict_k_variable_v_value__comment()
             .get('This should be on "result_2" (2)')) == 5
 
     assert (code_analyzer
             .get_list_interpretable()[2]
-            .get_dict_k_variable_v_value()
-            .get('Comment on "add" function call')) == "World"
+            .get_dict_k_variable_v_value__comment()
+            .get('ContainerComment on "add" function call')) == "World"
 
     assert (code_analyzer
             .get_list_interpretable()[3]
-            .get_dict_k_variable_v_value()
-            .get('Comment on "result"')) == 5
+            .get_dict_k_variable_v_value__comment()
+            .get('ContainerComment on "result"')) == 5
 
     assert (code_analyzer
             .get_list_interpretable()[4]
-            .get_dict_k_variable_v_value()
-            .get('Comment on "return result"')) == 5
+            .get_dict_k_variable_v_value__comment()
+            .get('ContainerComment on "return result"')) == 5

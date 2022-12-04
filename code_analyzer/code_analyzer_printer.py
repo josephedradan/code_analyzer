@@ -74,15 +74,15 @@ RICH_TABLE_HEADER_STYLE = "bold white on black"
 ##########
 
 class Attribute(enum.Enum):
-    EXECUTION_INDEX = enum.auto()
-    LINE_NUMBER = enum.auto()
-    INDENT_DEPTH_BY_SCOPE = enum.auto()
-    INDENT_DEPTH = enum.auto()
-    EXECUTION_COUNT = enum.auto()
-    CODE_SPACING = enum.auto()
-    CODE = enum.auto()
-    DICT_K_VARIABLE_V_VALUE = enum.auto()
-    LIST_STR_COMMENT = enum.auto()
+    EXECUTION_INDEX = enum.auto()  # Index that represents when a line of code has been executed
+    LINE_NUMBER = enum.auto()  # Line number
+    INDENT_DEPTH_BY_SCOPE = enum.auto()  # (Scope Depth) How deep the scope is
+    INDENT_DEPTH = enum.auto()  # How many 4 spaces are needed to place the code in the correct place
+    INTERPRETABLE_COUNT = enum.auto()  # The count number for the current line being executed
+    CODE_SPACING = enum.auto()  # The literal spacing before the actual code being executed
+    CODE = enum.auto()  # Code being executed
+    DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS = enum.auto()  # The variable's and their values in the current scope
+    COMMENT = enum.auto()  # Comments made by the programmer
 
     ##########
     FILENAME_FULL = enum.auto()
@@ -110,7 +110,7 @@ DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping
     ),
     Attribute.LINE_NUMBER: ContainerMapping(
         "Line #",
-        "{:<10}"
+        "{:<8}"
     ),
     Attribute.INDENT_DEPTH_BY_SCOPE: ContainerMapping(
         "Scope depth",
@@ -120,9 +120,9 @@ DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping
         "Indent depth",
         "{:<14}"
     ),
-    Attribute.EXECUTION_COUNT: ContainerMapping(
-        "Execution Count",
-        "{:<18}"
+    Attribute.INTERPRETABLE_COUNT: ContainerMapping(
+        "Interpretable Count",
+        "{:<22}"
     ),
     Attribute.CODE_SPACING: ContainerMapping(
         "",
@@ -135,14 +135,14 @@ DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping
         "{}"
     ),
 
-    # ----- Post Code -----
-    Attribute.DICT_K_VARIABLE_V_VALUE: ContainerMapping(
+    # ----- Post Code (Text right after code) -----
+    Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS: ContainerMapping(
         "{Variable: Value}",
-        " {}"
+        "  {}"
     ),
-    Attribute.LIST_STR_COMMENT: ContainerMapping(
-        "[Comment]",
-        " {}"
+    Attribute.COMMENT: ContainerMapping(
+        "Comments",
+        "  {}"
     ),
 
     ####################
@@ -160,6 +160,8 @@ DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping
 
 def get_str_dict_interpretable_data(dict_interpretable_data: DICT_K_ATTRIBUTE_V_DATA) -> str:
     """
+    Given a dict, make it into a string
+
     Notes:
         Assumes that the dict is ordered so python>=3.6 is required
 
@@ -222,15 +224,17 @@ class DataIntermediateInterpretable:
 
         self.indent_depth: int = self.trace_call_result.get_indent_depth_corrected()
 
-        self.execution_count = self.interpretable.get_execution_count()
+        self.interpretable_count = self.interpretable.get_interpretable_count()
 
         self.code_spacing: int
         self.code: int
         self.code_spacing, self.code = self.trace_call_result.get_spacing_corrected_and_line()
 
-        self.dict_k_variable_v_value: dict = interpretable.get_dict_k_variable_v_value()
+        self.dict_k_variable_v_value__frame_f_locals: dict = (
+            self.trace_call_result.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+        )
 
-        self.list_str_comment = self.interpretable.get_list_str_comment()
+        self.comment = self.interpretable.get_comment_container()
 
         #####
 
@@ -245,11 +249,11 @@ class DataIntermediateInterpretable:
             Attribute.LINE_NUMBER: self.line_number,
             Attribute.INDENT_DEPTH_BY_SCOPE: self.indent_depth_by_scope,
             Attribute.INDENT_DEPTH: self.indent_depth,
-            Attribute.EXECUTION_COUNT: self.execution_count,
+            Attribute.INTERPRETABLE_COUNT: self.interpretable_count,
             Attribute.CODE_SPACING: self.code_spacing,
             Attribute.CODE: self.code,
-            Attribute.DICT_K_VARIABLE_V_VALUE: self.dict_k_variable_v_value,
-            Attribute.LIST_STR_COMMENT: self.list_str_comment,
+            Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS: self.dict_k_variable_v_value__frame_f_locals,
+            Attribute.COMMENT: self.comment,
             Attribute.FILENAME_FULL: self.filename_full
         }
 
@@ -293,11 +297,11 @@ class CodeAnalyzerPrinter:
             Attribute.LINE_NUMBER,
             Attribute.INDENT_DEPTH_BY_SCOPE,
             Attribute.INDENT_DEPTH,
-            Attribute.EXECUTION_COUNT,
+            Attribute.INTERPRETABLE_COUNT,
             Attribute.CODE_SPACING,
             Attribute.CODE,
-            Attribute.DICT_K_VARIABLE_V_VALUE,
-            Attribute.LIST_STR_COMMENT,
+            Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
+            Attribute.COMMENT,
         ]
 
         return list_attribute
@@ -315,11 +319,11 @@ class CodeAnalyzerPrinter:
             # Attribute.LINE_NUMBER,
             Attribute.INDENT_DEPTH_BY_SCOPE,
             # Attribute.INDENT_DEPTH,
-            Attribute.EXECUTION_COUNT,
+            Attribute.INTERPRETABLE_COUNT,
             # Attribute.CODE_SPACING,
             # Attribute.CODE,
-            Attribute.DICT_K_VARIABLE_V_VALUE,
-            Attribute.LIST_STR_COMMENT,
+            Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
+            Attribute.COMMENT,
         ]
 
         return list_attribute
@@ -369,6 +373,13 @@ class CodeAnalyzerPrinter:
         str_column_names: str = get_str_dict_interpretable_data(dict_k_attribute_v_attribute_name)
 
         def get_str_row_interpretable(interpretable: Interpretable) -> str:
+            """
+            Given an interpretable, make a dict of it's variables that will be used in
+            str_execution_analysis. From that dict a string will be made
+
+            :param interpretable:
+            :return:
+            """
             nonlocal dict_k_attribute_v_attribute_name
             nonlocal style
 
@@ -419,9 +430,6 @@ class CodeAnalyzerPrinter:
             trace_call_result = interpretable.get_trace_call_result_primary()
 
             count = len(list_interpretable)
-
-            # WARNING: dict_k_variable_v_value VARIES PER INTERPRETABLE, DON'T USE THIS
-            dict_k_variable_v_value = interpretable.get_dict_k_variable_v_value()
 
             dict_shared = {}
 
@@ -533,7 +541,7 @@ class CodeAnalyzerPrinter:
             # title=STR_EXECUTION_ANALYSIS_HEADER,
             expand=True,
             width=(
-                    self.code_analyzer.length_line_most_chars_with_comments +
+                    self.code_analyzer.length_line_most_chars_with_comments_with_dict_k_variable_v_value +
                     len("".join(dict_k_attribute_v_attribute_name.values()))
             ),
             style=RICH_TABLE_STYLE
@@ -542,17 +550,19 @@ class CodeAnalyzerPrinter:
         if _bool_code_exists:
 
             _str_dict = ""
-            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
+                                                                  None) is not None:
                 _str_dict = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
-                    Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].name
+                    Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                        Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS].name
                 )
 
             _str_list = ""
-            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.LIST_STR_COMMENT, None) is not None:
+            if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.COMMENT, None) is not None:
                 _str_list = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
-                    Attribute.LIST_STR_COMMENT].str_format.format(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].name
+                    Attribute.COMMENT].str_format.format(
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.COMMENT].name
                 )
 
             dict_k_attribute_v_attribute_name[Attribute.CODE] = "{}{}{}".format(
@@ -565,8 +575,8 @@ class CodeAnalyzerPrinter:
 
             if _bool_code_exists and (
                     attribute == Attribute.CODE_SPACING or
-                    attribute == Attribute.DICT_K_VARIABLE_V_VALUE or
-                    attribute == Attribute.LIST_STR_COMMENT):
+                    attribute == Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS or
+                    attribute == Attribute.COMMENT):
                 pass
             elif attribute == Attribute.CODE_SPACING:
                 # Never have a column for code spacing because it's empty
@@ -575,7 +585,7 @@ class CodeAnalyzerPrinter:
                 table.add_column(
                     dict_k_attribute_v_attribute_name[attribute],
                     no_wrap=True,
-                    width=self.code_analyzer.length_line_most_chars_with_comments,
+                    width=self.code_analyzer.length_line_most_chars_with_comments_with_dict_k_variable_v_value,
                     header_style=RICH_TABLE_HEADER_STYLE,
                     style=RICH_TABLE_STYLE
                 )
@@ -618,32 +628,56 @@ class CodeAnalyzerPrinter:
                     Styles for "style" can be found at https://rich.readthedocs.io/en/stable/style.html 
                     Colors for "style" can be found at https://rich.readthedocs.io/en/stable/appendix/colors.html
             """
-            if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
+            if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
+                                                     None) is not None:
                 # Removes empty dict string
-                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] = (
-                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] if
-                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE] else ""
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = (
+                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] if
+                    dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] else ""
                 )
 
-                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE]: Text = Text(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.DICT_K_VARIABLE_V_VALUE].str_format.format(
-                        dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE]),
-                    style="rgb(255,0,0)",  # Red
-                    # style="dark_orange",
-                )
+                _str_dict_k_variable_v_value = (
+                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                        Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS].str_format.format(
+                        dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]
+                    )
+                ).rstrip()
 
-            if dict_k_attribute_v_data__filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
-                # Removes empty list string
-                dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] = (
-                    dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] if
-                    dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT] else ""
-                )
+                # The commented out code below does not make a difference because text object style carries over
+                # text_dict_k_variable_v_value: Text = Syntax(
+                #     "",
+                #     lexer=RICH_SYNTAX_LEXER,
+                #     theme=RICH_SYNTAX_THEME).highlight(_str_dict_k_variable_v_value)
+                #
+                # text_dict_k_variable_v_value.stylize('dark_orange')
+                #
+                # text_dict_k_variable_v_value.rstrip()
+                #
+                # dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] =(
+                #     text_dict_k_variable_v_value
+                # )
 
-                dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT]: Text = Text(
-                    DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.LIST_STR_COMMENT].str_format.format(
-                        dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT]),
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]: Text = Text(
+                    _str_dict_k_variable_v_value,
                     # style="rgb(255,0,0)",  # Red
-                    style="dark_orange",
+                    style="dark_orange",  # rgb(215,95,0)
+                )
+
+            if dict_k_attribute_v_data__filtered.get(Attribute.COMMENT, None) is not None:
+                # Removes empty list string
+                dict_k_attribute_v_data__filtered[Attribute.COMMENT] = (
+                    dict_k_attribute_v_data__filtered[Attribute.COMMENT] if
+                    dict_k_attribute_v_data__filtered[Attribute.COMMENT] else ""
+                )
+
+                _str_comment = (DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.COMMENT].str_format.format(
+                    dict_k_attribute_v_data__filtered[Attribute.COMMENT]
+                )).rstrip()
+
+                dict_k_attribute_v_data__filtered[Attribute.COMMENT]: Text = Text(
+                    _str_comment,
+                    style="rgb(255,0,0)",  # Red
+                    # style="dark_orange",  # rgb(215,95,0)
                 )
 
             if (dict_k_attribute_v_data__filtered.get(Attribute.CODE_SPACING, None) is not None and
@@ -707,15 +741,17 @@ class CodeAnalyzerPrinter:
 
                 text_code_spacing.append_text(text_code)
 
-                if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE, None) is not None:
-                    text_code_spacing.append_text(dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE])
+                if dict_k_attribute_v_data__filtered.get(Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
+                                                         None) is not None:
+                    text_code_spacing.append_text(
+                        dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS])
 
-                    dict_k_attribute_v_data__filtered.pop(Attribute.DICT_K_VARIABLE_V_VALUE)
+                    dict_k_attribute_v_data__filtered.pop(Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS)
 
-                if dict_k_attribute_v_data__filtered.get(Attribute.LIST_STR_COMMENT, None) is not None:
-                    text_code_spacing.append_text(dict_k_attribute_v_data__filtered[Attribute.LIST_STR_COMMENT])
+                if dict_k_attribute_v_data__filtered.get(Attribute.COMMENT, None) is not None:
+                    text_code_spacing.append_text(dict_k_attribute_v_data__filtered[Attribute.COMMENT])
 
-                    dict_k_attribute_v_data__filtered.pop(Attribute.LIST_STR_COMMENT)
+                    dict_k_attribute_v_data__filtered.pop(Attribute.COMMENT)
 
                 dict_k_attribute_v_data__filtered[Attribute.CODE] = text_code_spacing
 
@@ -742,16 +778,17 @@ class CodeAnalyzerPrinter:
 
         # WARNING: Suboptimal since this calculation was made before
         __width_additional = len("".join({
-            attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute_name].name
-            for attribute_name in self._get_list_attribute_allowed_execution_analysis()
-        }.values()))
+                                             attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                                                 attribute_name].name
+                                             for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+                                         }.values()))
 
         for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
             table_shared = Table(
                 expand=True,
                 style=RICH_TABLE_STYLE,
                 width=(
-                        self.code_analyzer.length_line_most_chars_with_comments +
+                        self.code_analyzer.length_line_most_chars_with_comments_with_dict_k_variable_v_value +
                         __width_additional
                 ),
             )
@@ -818,7 +855,7 @@ class CodeAnalyzerPrinter:
                 expand=True,
                 style=RICH_TABLE_STYLE,
                 width=(
-                        self.code_analyzer.length_line_most_chars_with_comments +
+                        self.code_analyzer.length_line_most_chars_with_comments_with_dict_k_variable_v_value +
                         __width_additional
                 ),
             )
@@ -912,22 +949,23 @@ def _get_dict_interpretable_data_styled(interpretable: Interpretable,
 
     dict_temp = dict_interpretable_data
 
-    dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] = (
-        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] if dict_temp[
-            Attribute.DICT_K_VARIABLE_V_VALUE] else ""
+    dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = (
+        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] if dict_temp[
+            Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] else ""
     )
 
-    dict_temp[Attribute.LIST_STR_COMMENT] = (
-        dict_temp[Attribute.LIST_STR_COMMENT] if dict_temp[Attribute.LIST_STR_COMMENT] else ""
+    dict_temp[Attribute.COMMENT] = (
+        dict_temp[Attribute.COMMENT] if dict_temp[Attribute.COMMENT] else ""
     )
 
     if style == Style.COLORAMA:
-        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE] = (
-                colorama.Fore.RED + str(dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE]) + colorama.Style.RESET_ALL
+        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = (
+                colorama.Fore.RED + str(
+            dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]) + colorama.Style.RESET_ALL
         )
 
-        dict_temp[Attribute.LIST_STR_COMMENT] = (
-                colorama.Fore.RED + str(dict_temp[Attribute.LIST_STR_COMMENT]) + colorama.Style.RESET_ALL
+        dict_temp[Attribute.COMMENT] = (
+                colorama.Fore.RED + str(dict_temp[Attribute.COMMENT]) + colorama.Style.RESET_ALL
         )
 
         # TODO: Design the below better

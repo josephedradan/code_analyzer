@@ -26,6 +26,7 @@ from typing import List, Union
 from code_analyzer import constants
 from code_analyzer import scope
 from code_analyzer import trace_call_result as _trace_call_result
+from code_analyzer.container_comment import ContainerComment
 
 
 class NoTraceCallResult(Exception):
@@ -69,11 +70,13 @@ class Interpretable:
         # All TraceCallResult objects related to this interpretable
         self.list_trace_call_result: List[_trace_call_result.TraceCallResult] = []
 
-        # Dict of "Variable: Value" pairs
-        self.dict_k_variable_v_value: dict = {}
+        # # Dict of "Variable: Value" pairs as comments
+        # self.dict_k_variable_v_value__comment: dict = {}
+        #
+        # # List of strings that are comments
+        # self.comment: List[str] = []
 
-        # List of strings
-        self.list_str_comment: List[str] = []
+        self.comment: ContainerComment = ContainerComment()
 
         ##################################################
         """
@@ -106,7 +109,7 @@ class Interpretable:
     def set_interpretable_type(self, interpretable_type: constants.InterpretableType):
         self.interpretable_type = interpretable_type
 
-    def get_execution_count(self) -> Union[int, None]:
+    def get_interpretable_count(self) -> Union[int, None]:
         return self.execution_number_relative
 
     def get_execution_index_relative(self) -> Union[int, None]:
@@ -128,46 +131,15 @@ class Interpretable:
 
         self.list_trace_call_result.append(trace_call_result)
 
-    def update_list_comment_through_list(self, list_comment: List[constants.COMMENT]):
-        """
-        Loop add comment from list to its appropriate container
-
-        :param list_comment:
-        :return:
-        """
-        while list_comment:
-
-            comment = list_comment.pop()
-
-            if isinstance(comment, dict):
-                self.update_dict_k_variable_v_value(comment)
-
-            elif isinstance(comment, str):
-                self.update_list_str_comment(comment)
-
-            elif isinstance(comment, list):
-                self.list_str_comment.extend(comment)
-            else:
-                self.update_list_str_comment(str(comment))
-
-    def update_dict_k_variable_v_value(self, dict_k_variable_v_value: dict):
-        self.dict_k_variable_v_value.update(dict_k_variable_v_value)
-
-    def get_dict_k_variable_v_value(self) -> dict:
-        return self.dict_k_variable_v_value
-
-    def update_list_str_comment(self, string: str):
-        self.list_str_comment.append(string)
-
-    def get_list_str_comment(self) -> List[str]:
-        return self.list_str_comment
+    def get_comment_container(self) -> ContainerComment:
+        return self.comment
 
     def get_trace_call_result_primary(self) -> _trace_call_result.TraceCallResult:
         """
         Get the primary TraceCallResult object that would represent this object
         as its primary TraceCallResult object assuming that hter
 
-        TODO: Redesign, give who 3
+        TODO: Redesign maybe
         :return:
         """
         if not self.list_trace_call_result:
@@ -242,7 +214,7 @@ class Interpretable:
         # DEBUGGING START
         ####################
 
-        # print_function(f"INDEX LEVEL CORRECTED: {}\nINDEX LEVEL OFFSET: {}\n".format(
+        # print(f"INDEX LEVEL CORRECTED: {}\nINDEX LEVEL OFFSET: {}\n".format(
         #     trace_call_result.get_indent_level_corrected(),
         #     self.scope_parent.get_indent_level_first()
         # ))
@@ -251,13 +223,13 @@ class Interpretable:
         # DEBUGGING END
         ####################
 
-        return f"{str(trace_call_result)} | {self.dict_k_variable_v_value}"
+        return f"{str(trace_call_result)} | {self.comment}"
 
     def __hash__(self):
         """
         Since interpretables are pretty much based on the their primary TraceCallResult object,
         use it's hash. If the above statement is true, the only difference between Interpretable
-        objects will be their self.dict_k_variable_v_value and self.list_str_comment
+        objects will be their self.dict_k_variable_v_value__comment and self.comment
 
         :return:
         """
