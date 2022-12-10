@@ -27,7 +27,7 @@ code_analyzer = CodeAnalyzer()  # Initialize analyzer
 code_analyzer.start()
 
 # Comment that will be displayed on the next line
-code_analyzer.record_comment_for_interpretable_next({"Function definition here!": "Wow!"})
+code_analyzer.record_comment_for_interpretable_next("Function definition here!")
 
 
 def recursive(depth: int) -> int:
@@ -40,7 +40,7 @@ def recursive(depth: int) -> int:
     return recursive(depth - 1)
 
 
-code_analyzer.record_comment_for_interpretable_next({"This is where the fun begins": "Oh no!"})
+code_analyzer.record_comment_for_interpretable_next("This is where the fun begins")
 recursive(5)
 
 code_analyzer.stop()

@@ -30,10 +30,12 @@ code_analyzer = CodeAnalyzer()
 
 @code_analyzer
 def main():
+    code_analyzer.record_comment_for_interpretable_next("Function defined")
+
     def add(x: int, y: int):
-        code_analyzer.record_comment_for_interpretable_next({"Random ContainerComment": "Good code!"})
         result = x + y
         code_analyzer.record_comment_for_interpretable_previous({"result": result})
+        code_analyzer.record_comment_for_interpretable_previous(f"Result {result}")
 
         for i in range(1):
             x = i

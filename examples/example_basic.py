@@ -66,7 +66,7 @@ def fff():
         q = 53
 
         def inner():
-            z = f + 23
+            z = f + 23 + q
             a = 23 + z
             return a
 

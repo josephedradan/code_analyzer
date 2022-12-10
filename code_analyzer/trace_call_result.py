@@ -366,64 +366,18 @@ class TraceCallResult:
         """
 
         Notes:
-            Statement 1.
-                This conditional replaces interpretable_previous_by_scope because its TraceCallResult will have an
-                Event == Event.CALL. This TraceCallResult does not contain the same f_locals or f_code variables
-                as the other TraceCallResult objects in the same scope so the primary action of finding the difference
-                between this object and a previous interpretable will result in incorrect information being returned.
-
-                Basically, look at the previous previous interpretable as it may have the correct/same frame object
-                as this object in which conducting the difference will result in the correct output.
+            This function does not track variables on the same scope where the CodeAnalyser object was started.
+            Variables tracked are found within the local scope of callables (frame.f_locals) that have:
+                1. the custom trace function attached to them
+                2. the variables are also found within the
+                    frame.co_code.co_varnames OR
+                    frame.co_code.co_cellvars OR
+                    frame.co_code.co_freevars
+            for all calculations.
 
         :return:
         """
-        interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
-
-        dict_frame_f_locals_filtered_by_code_object_vars_all = (
-            self.get_frame_f_locals_filtered_by_code_object_vars_all()
-        )
-
-        if interpretable_previous_by_scope is None:
-            return dict_frame_f_locals_filtered_by_code_object_vars_all
-
-        # Statement 1
-        elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
-            interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
-
-        trace_call_result_interpretable_previous: TraceCallResult = (
-            interpretable_previous_by_scope.get_trace_call_result_primary()
-        )
-
-        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
-            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all()
-        )
-
-        # Old style
-        # dict_difference = dict((
-        #         set(dict_frame_f_locals_filtered_by_code_object_vars_all.items()) ^
-        #         set(
-        #             trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all().items())
-        # ))
-        #
-        # dict_difference_filtered = {k: v for k, v in dict_difference.items() if
-        #                             k in dict_frame_f_locals_filtered_by_code_object_vars_all}
-
-        # New style
-        dict_difference = {
-            k: v for k, v in dict_frame_f_locals_filtered_by_code_object_vars_all.items()
-            if
-            k not in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
-            or
-            (
-                    k in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
-                    and
-                    dict_frame_f_locals_filtered_by_code_object_vars_all[k] !=
-                    dict_frame_f_locals_filtered_by_code_object_vars_all_previous[k]
-            )
-
-        }
-
-        return dict_difference
+        return self.asdasdas(use_filtered_by_set_variable_exclusion=False)
 
     def get_frame_f_locals_filtered_by_set_variable_exclusion(self) -> dict:
 
@@ -436,16 +390,42 @@ class TraceCallResult:
         return dict_temp
 
     def get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous(self):
+        """
+        Notes:
+            This function does track variables on the same scope where the CodeAnalyser object was started.
+            Variables tracked are found within the local scope of callables (frame.f_locals) for all calculations.
+
+        :return:
+        """
+        return self.asdasdas(use_filtered_by_set_variable_exclusion=True)
+
+    def asdasdas(self, use_filtered_by_set_variable_exclusion: bool = False):
+        """
+
+        Notes:
+            Statement 1.
+                This conditional replaces interpretable_previous_by_scope because its TraceCallResult will have an
+                Event == Event.CALL. This TraceCallResult does not contain the same f_locals or f_code variables
+                as the other TraceCallResult objects in the same scope so the primary action of finding the difference
+                between this object and a previous interpretable will result in incorrect information being returned.
+
+                Basically, look at the previous previous interpretable as it may have the correct/same frame object
+                as this object in which conducting the difference will result in the correct output.
+
+        :return:
+        """
 
         interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
 
-        dict_frame_f_locals_filtered_by_set_variable_exclusion = (
-            self.get_frame_f_locals_filtered_by_set_variable_exclusion()
-        )
+        if use_filtered_by_set_variable_exclusion:
+            dict_frame_f_locals_filtered = self.get_frame_f_locals_filtered_by_set_variable_exclusion()
+        else:
+            dict_frame_f_locals_filtered = self.get_frame_f_locals_filtered_by_code_object_vars_all()
 
         if interpretable_previous_by_scope is None:
-            return dict_frame_f_locals_filtered_by_set_variable_exclusion
+            return dict_frame_f_locals_filtered
 
+        # Statement 1.
         elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
             interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
 
@@ -453,55 +433,46 @@ class TraceCallResult:
             interpretable_previous_by_scope.get_trace_call_result_primary()
         )
 
-        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
-            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_set_variable_exclusion()
-        )
+        if use_filtered_by_set_variable_exclusion:
+            dict_frame_f_locals_previous_filtered = (
+                trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_set_variable_exclusion()
+            )
+        else:
+            dict_frame_f_locals_previous_filtered = (
+                trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all()
+            )
 
-        # New style
-        dict_difference = {
-            k: v for k, v in dict_frame_f_locals_filtered_by_set_variable_exclusion.items()
-            if k not in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
-               or
-               (
-                       k in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
-                       and
-                       dict_frame_f_locals_filtered_by_set_variable_exclusion[k] !=
-                       dict_frame_f_locals_filtered_by_code_object_vars_all_previous[k]
-               )
-
-        }
-
-        return dict_difference
-
-    def get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous(self):
-
-        interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
-
-        dict_frame_f_locals_filtered_by_set_variable_exclusion = (
-            self.get_frame_f_locals_filtered_by_set_variable_exclusion()
-        )
-
-        if interpretable_previous_by_scope is None:
-            return dict_frame_f_locals_filtered_by_set_variable_exclusion
-
-        elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
-            interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
-
-        trace_call_result_interpretable_previous: TraceCallResult = (
-            interpretable_previous_by_scope.get_trace_call_result_primary()
-        )
-
-        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
-            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_set_variable_exclusion()
-        )
-
-        dict_difference = get_dict_difference(dict_frame_f_locals_filtered_by_set_variable_exclusion,
-                                              dict_frame_f_locals_filtered_by_code_object_vars_all_previous)
+        dict_difference = get_dict_difference_special(dict_frame_f_locals_filtered,
+                                                      dict_frame_f_locals_previous_filtered)
 
         return dict_difference
 
 
-def get_dict_difference(dict_primary: dict, dict_secondary: dict) -> dict:
+def get_dict_difference_special(dict_primary: dict, dict_secondary: dict) -> dict:
+    """
+    Get a special difference between given dictionaries
+
+    Notes:
+        Get the difference between the primary and secondary dict where the keys of the primary dict
+        are filtered by the secondary dict. Basically the keys of the primary dict are checked to see if they
+        are it the secondary dict.
+
+    :param dict_primary:
+    :param dict_secondary:
+    :return:
+    """
+
+    # Old style
+    # dict_difference = dict((
+    #         set(dict_frame_f_locals_filtered_by_code_object_vars_all.items()) ^
+    #         set(
+    #             trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all().items())
+    # ))
+    #
+    # dict_difference_filtered = {k: v for k, v in dict_difference.items() if
+    #                             k in dict_frame_f_locals_filtered_by_code_object_vars_all}
+
+    # Newer style
     # dict_difference = {
     #     k: v for k, v in dict_primary.items()
     #     if k not in dict_secondary

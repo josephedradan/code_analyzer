@@ -21,41 +21,50 @@ method call to see the code in a file might be more useful/helpful.
 
     from code_analyzer import CodeAnalyzer
     
-    code_analyzer = CodeAnalyzer()
+    code_analyzer = CodeAnalyzer()  # Initialize analyzer
     code_analyzer.start()
     
-    
-    def add(x: int, y: int):
-        result = x + y
-        code_analyzer.record_comment_for_interpretable_previous({"result": result})
-        code_analyzer.record_comment_for_interpretable_previous(f"Result {result}")
-    
-        for i in range(1):
-            x = i
-    
-        return result
+    # Comment that will be displayed on the next line
+    code_analyzer.record_comment_for_interpretable_next("Function definition here!")
     
     
-    add(1, 2)
-    add(42, 8)
-    add(5, 6)
+    def recursive(depth: int) -> int:
+        # Comment that will be displayed on the previous line
+        code_analyzer.record_comment_for_interpretable_previous({"__depth": depth})
+        if depth <= 0:
+            code_analyzer.record_comment_for_interpretable_next({"Final depth": depth})
+            return depth
+    
+        return recursive(depth - 1)
+    
+    
+    code_analyzer.record_comment_for_interpretable_next("This is where the fun begins")
+    recursive(5)
     
     code_analyzer.stop()
     code_analyzer.print()
+    
+    # code_analyzer.get_code_analyzer_printer().print_debug()
+    code_analyzer.get_code_analyzer_printer().export_to_txt()
+    
+    # code_analyzer.get_code_analyzer_printer().print_rich()  # export_rich_to_html prints to console by default
+    code_analyzer.get_code_analyzer_printer().export_rich_to_html()
+    
+    Or just look at the other examples in examples folder.
 
-Or just look at the other examples in examples folder.
-
-[Example of a rich html output analyzing the file "examples/example_cursive_complex.py"](https://htmlpreview.github.io/?https://github.com/josephedradan/code_analyzer/blob/main/examples/example_cursive_complex_code_analysis_rich.html)
 
 ### Output
 ![example_recursive.png](./images/example_recursive.png)
+
+[Rich output html](https://htmlpreview.github.io/?https://github.com/josephedradan/code_analyzer/blob/main/examples/example_recursive.html)
 ### Notes
 
 In the output of a print (Such as in the image above):
 
 * Blue foreground code is a callable's definition.
 * Green foreground code is a callable being executed.
-* Red foreground text is a result of one of the method calls below:
+* Red foreground text are {Variable: value} pairs found in between the `{}` brackets that are new to the current interpretable relative to its scope. 
+* Purple foreground text are (arguments) found in between the `()` brackets passed to the method calls below:
     * .record_comment_for_interpretable_next(...) 
     * .record_comment_for_interpretable_previous(...)
     
@@ -63,8 +72,8 @@ In the output of a rich export (such as the .html files in the examples folder):
 
 * Blue background code is a callable's definition.
 * Green background code is a callable being executed.
-* Orange foreground text are the current scope's variable's values/
-* Red foreground text is a result of one of the method calls below:
+* Orange foreground text are {Variable: value} pairs found in between the {} brackets that are new to the current interpretable relative to its scope. 
+* Red foreground text are (arguments) found in between the () brackets passed to the method calls below:
     * .record_comment_for_interpretable_next(...) 
     * .record_comment_for_interpretable_previous(...)
 
@@ -76,4 +85,6 @@ IMPORT BELOW TO THE TOP OF THE FILE TO POSSIBLY REMOVE IT__
 
 
 __TODO:__
-
+* Fancy visualizer
+* Memory usage?
+* Timing code?

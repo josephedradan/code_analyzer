@@ -28,6 +28,8 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()
 code_analyzer.start()
 
+code_analyzer.record_comment_for_interpretable_next("Function defined")
+
 
 def add(x: int, y: int):
     result = x + y

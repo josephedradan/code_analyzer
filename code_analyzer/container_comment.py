@@ -32,7 +32,7 @@ class ContainerComment:
 
         self.dict_k_variable_value: dict = {}
 
-    def get_list_str(self) -> List[str]:
+    def get_list_any(self) -> List[str]:
         return self.list_any
 
     def get_dict_k_variable_value(self) -> dict:
@@ -64,14 +64,14 @@ class ContainerComment:
 
     def __str__(self) -> str:
 
-        list_items = []
+        list_items: List[str] = []
 
         for item in self.list_any:
 
             if isinstance(item, str):
                 list_items.append("'{}'".format(item))
             else:
-                list_items.append(item)
+                list_items.append(str(item))
 
         for k, v in self.dict_k_variable_value.items():
 
