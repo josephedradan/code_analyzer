@@ -82,7 +82,8 @@ IMPORT BELOW TO THE TOP OF THE FILE TO POSSIBLY REMOVE IT__
 
     from __future__ import annotations
 
-
+### Installation
+    pip install python-code-analyzer
 
 __TODO:__
 * Fancy visualizer
