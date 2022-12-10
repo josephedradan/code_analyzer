@@ -6,186 +6,260 @@
 Execution Analysis
 --------------------------------------------------
 
-Execution Index Line #  Scope depth   Indent depth  Interpretable Count   Code  {Variable: Value}  Comments
-0               32      0             0             1                     class X:    ['Class definition']
-1               34      1             1             1                         def __init__(self):    
-2               37      1             1             1                         def __str__(self):    
-3               41      0             0             1                     var_a = 2    
-4               42      0             0             1                     var_b = 3    
-5               45      0             0             1                     def adder(temp_var):    
-6               57      0             0             1                     adder(100)    
-7               45      0             0             2                     def adder(temp_var):  {'temp_var': 100}  
-8               51      1             1             1                         a = 424  {'temp_var': 100}  
-9               52      1             1             1                         b = a + temp_var  {'temp_var': 100, 'a': 424}  
-10              53      1             1             1                         b = b + 5  {'temp_var': 100, 'a': 424, 'b': 524}  
-11              54      1             1             1                         return b  {'temp_var': 100, 'a': 424, 'b': 529}  
-12              60      0             0             1                     def out():    
-13              71      0             0             1                     var_c = out()    
-14              60      0             0             2                     def out():    
-15              61      1             1             1                         f = 23    
-16              63      1             1             1                         def inner():    
-17              68      1             1             1                         return inner()  {'inner': <function out.<locals>.inner at 0x000002C8450B3430>}  
-18              63      1             1             2                         def inner():    
-19              64      2             2             1                             z = f + 23    
-20              65      2             2             1                             a = 23 + z  {'z': 46}  
-21              66      2             2             1                             return a  {'z': 46, 'a': 69}  
+Execution Index Line #  Scope depth   Indent depth  Interpretable Count   Code  {Variable: Value}  (Comments)
+0               29      0             0             1                     temp = 23123123131231
+1               33      0             0             1                     def fff():  {'temp': 23123123131231}  (Class definition)
+2               79      0             0             1                     fff()  {'fff': <function fff at 0x000001E346A6E1F0>}
+3               33      0             0             2                     def fff():
+4               34      1             1             1                         class X:
+5               36      2             2             1                             def __init__(self):  {'__module__': '__main__', '__qualname__': 'fff.<locals>.X'}
+6               39      2             2             1                             def __str__(self):  {'__init__': <function fff.<locals>.X.__init__ at 0x000001E3484B29D0>}
+7               43      1             1             1                         var_a = 2  {'X': <class '__main__.fff.<locals>.X'>}
+8               44      1             1             1                         var_b = 3  {'var_a': 2}
+9               46      1             1             1                         star = 123123123123  {'var_b': 3}
+10              49      1             1             1                         def adder(temp_var):  {'star': 123123123123}
+11              60      1             1             1                         z = adder(100)  {'adder': <function fff.<locals>.adder at 0x000001E346A6E280>}
+12              49      1             1             2                         def adder(temp_var):  {'temp_var': 100}
+13              55      2             2             1                             a = 424  {'temp_var': 100}
+14              56      2             2             1                             b = a + temp_var  {'a': 424}
+15              57      2             2             1                             b = b + 5  {'b': 524}
+16              58      2             2             1                             return b  {'b': 529}
+17              61      1             1             1                         final = z + var_a + var_b  {'z': 529}
+18              62      1             1             1                         print(final)  {'final': 534}
+19              64      1             1             1                         def out():
+20              76      1             1             1                         var_c = out()  {'out': <function fff.<locals>.out at 0x000001E3484B2AF0>}
+21              64      1             1             2                         def out():
+22              65      2             2             1                             f = 23
+23              66      2             2             1                             q = 53  {'f': 23}
+24              68      2             2             1                             def inner():  {'q': 53}
+25              73      2             2             1                             return inner() + q  {'inner': <function fff.<locals>.out.<locals>.inner at 0x000001E3484B2B80>}
+26              68      2             2             2                             def inner():
+27              69      3             3             1                                 z = f + 23  {'f': 23}
+28              70      3             3             1                                 a = 23 + z  {'z': 46}
+29              71      3             3             1                                 return a  {'a': 69}
+30              77      1             1             1                         print(var_c)  {'var_c': 122}
 
 --------------------------------------------------
 Line of code Analysis
 --------------------------------------------------
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 32
-Code: class X:
+Line #: 29
+Code: temp = 23123123131231
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value}              Comments
-0                0            0                    1                {}  ['Class definition']
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0                0            0                    1                {}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 33
+Code: def fff():
+Call Count: 2
+   Execution Index  Scope depth  Interpretable Count         {Variable: Value}          (Comments)
+0                1            0                    1  {'temp': 23123123131231}  (Class definition)
+1                3            0                    2                        {}                    
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 79
+Code: fff()
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count                              {Variable: Value} (Comments)
+0                2            0                    1  {'fff': <function fff at 0x000001E346A6E1F0>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 34
+Code: class X:
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0                4            1                    1                {}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 36
 Code: def __init__(self):
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0                1            1                    1                {}         
+   Execution Index  Scope depth  Interpretable Count                                             {Variable: Value} (Comments)
+0                5            2                    1  {'__module__': '__main__', '__qualname__': 'fff.<locals>.X'}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 37
+Line #: 39
 Code: def __str__(self):
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0                2            1                    1                {}         
+   Execution Index  Scope depth  Interpretable Count                                                       {Variable: Value} (Comments)
+0                6            2                    1  {'__init__': <function fff.<locals>.X.__init__ at 0x000001E3484B29D0>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 41
+Line #: 43
 Code: var_a = 2
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0                3            0                    1                {}         
+   Execution Index  Scope depth  Interpretable Count                         {Variable: Value} (Comments)
+0                7            1                    1  {'X': <class '__main__.fff.<locals>.X'>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 42
+Line #: 44
 Code: var_b = 3
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0                4            0                    1                {}         
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0                8            1                    1      {'var_a': 2}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 45
+Line #: 46
+Code: star = 123123123123
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0                9            1                    1      {'var_b': 3}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 49
 Code: def adder(temp_var):
 Call Count: 2
-   Execution Index  Scope depth  Interpretable Count  {Variable: Value} Comments
-0                5            0                    1                 {}         
-1                7            0                    2  {'temp_var': 100}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 57
-Code: adder(100)
-Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0                6            0                    1                {}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 51
-Code: a = 424
-Call Count: 1
-   Execution Index  Scope depth  Interpretable Count  {Variable: Value} Comments
-0                8            1                    1  {'temp_var': 100}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 52
-Code: b = a + temp_var
-Call Count: 1
-   Execution Index  Scope depth  Interpretable Count            {Variable: Value} Comments
-0                9            1                    1  {'temp_var': 100, 'a': 424}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 53
-Code: b = b + 5
-Call Count: 1
-   Execution Index  Scope depth  Interpretable Count                      {Variable: Value} Comments
-0               10            1                    1  {'temp_var': 100, 'a': 424, 'b': 524}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 54
-Code: return b
-Call Count: 1
-   Execution Index  Scope depth  Interpretable Count                      {Variable: Value} Comments
-0               11            1                    1  {'temp_var': 100, 'a': 424, 'b': 529}         
+   Execution Index  Scope depth  Interpretable Count       {Variable: Value} (Comments)
+0               10            1                    1  {'star': 123123123123}           
+1               12            1                    2       {'temp_var': 100}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 60
-Code: def out():
-Call Count: 2
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               12            0                    1                {}         
-1               14            0                    2                {}         
+Code: z = adder(100)
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count                                               {Variable: Value} (Comments)
+0               11            1                    1  {'adder': <function fff.<locals>.adder at 0x000001E346A6E280>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 71
-Code: var_c = out()
+Line #: 55
+Code: a = 424
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               13            0                    1                {}         
+   Execution Index  Scope depth  Interpretable Count  {Variable: Value} (Comments)
+0               13            2                    1  {'temp_var': 100}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 56
+Code: b = a + temp_var
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               14            2                    1        {'a': 424}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 57
+Code: b = b + 5
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               15            2                    1        {'b': 524}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 58
+Code: return b
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               16            2                    1        {'b': 529}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 61
-Code: f = 23
+Code: final = z + var_a + var_b
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               15            1                    1                {}         
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               17            1                    1        {'z': 529}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 63
-Code: def inner():
-Call Count: 2
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               16            1                    1                {}         
-1               18            1                    2                {}         
-
-
-Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
-Line #: 68
-Code: return inner()
+Line #: 62
+Code: print(final)
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count                                               {Variable: Value} Comments
-0               17            1                    1  {'inner': <function out.<locals>.inner at 0x000002C8450B3430>}         
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               18            1                    1    {'final': 534}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 64
-Code: z = f + 23
+Code: def out():
+Call Count: 2
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               19            1                    1                {}           
+1               21            1                    2                {}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 76
+Code: var_c = out()
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               19            2                    1                {}         
+   Execution Index  Scope depth  Interpretable Count                                           {Variable: Value} (Comments)
+0               20            1                    1  {'out': <function fff.<locals>.out at 0x000001E3484B2AF0>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 65
-Code: a = 23 + z
+Code: f = 23
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count {Variable: Value} Comments
-0               20            2                    1         {'z': 46}         
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               22            2                    1                {}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
 Line #: 66
+Code: q = 53
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               23            2                    1         {'f': 23}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 68
+Code: def inner():
+Call Count: 2
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               24            2                    1         {'q': 53}           
+1               26            2                    2                {}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 73
+Code: return inner() + q
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count                                                            {Variable: Value} (Comments)
+0               25            2                    1  {'inner': <function fff.<locals>.out.<locals>.inner at 0x000001E3484B2B80>}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 69
+Code: z = f + 23
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               27            3                    1         {'f': 23}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 70
+Code: a = 23 + z
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               28            3                    1         {'z': 46}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 71
 Code: return a
 Call Count: 1
-   Execution Index  Scope depth  Interpretable Count   {Variable: Value} Comments
-0               21            2                    1  {'z': 46, 'a': 69}         
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               29            3                    1         {'a': 69}           
+
+
+Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_test.py
+Line #: 77
+Code: print(var_c)
+Call Count: 1
+   Execution Index  Scope depth  Interpretable Count {Variable: Value} (Comments)
+0               30            1                    1    {'var_c': 122}           
 
 

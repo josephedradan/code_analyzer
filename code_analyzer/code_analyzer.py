@@ -219,8 +219,6 @@ class CodeAnalyzer:
         # Interpretable stuff
         ####################
 
-        self._interpretable_current: Union[Interpretable, None] = None
-
         self._count_interpretable_previous_visibility_false: int = 0
 
         self._count_interpretable_next_visibility_false: int = 0
@@ -260,6 +258,8 @@ class CodeAnalyzer:
         
         """
         self._index_frame_object: Union[int, None] = None
+
+        self._initial_scope_call = False
 
         ####################
 
@@ -350,15 +350,13 @@ class CodeAnalyzer:
 
         #####
 
-        self._interpretable_current = None
-
         self._count_interpretable_previous_visibility_false = 0
         self._count_interpretable_next_visibility_false = 0
         self._bool_interpretable_next_visibility_false_used = False
         #####
 
         self._list_stack_scope.clear()
-
+        self._initial_scope_call = False
         #####
 
         # self._index_frame_object = None  # Do not uncomment this, read the "Notes:" above
@@ -441,6 +439,8 @@ class CodeAnalyzer:
         # Initialize the first scope
         self._list_stack_scope.append(Scope())
 
+        self._initial_scope_call = True
+
         def trace_function_callback(frame: FrameType, event: str, arg: Any):
             """
                 Custom trace function
@@ -478,8 +478,20 @@ class CodeAnalyzer:
                                        "on the same level as the start() method or deeper. 2. The analyzer has a"
                                        "a coding error.")
 
-            # Current Scope
+            # Current Scope (A scope must always exist)
             scope_current: Scope = self._list_stack_scope[-1]
+
+            """
+            The below is a special condition that is only ran once when the first call to this
+            function is made.
+            
+            Notes:
+                Cannot use the size of self.list_interpretable nor scope_current.list_interpretable because
+                their size is subject to change when the conditional below should only be ran once.
+            """
+            if self._initial_scope_call:
+                scope_current.update_set_variable_exclusion(frame.f_locals)
+                self._initial_scope_call = False
 
             """
             Current interpretable
@@ -494,6 +506,9 @@ class CodeAnalyzer:
             interpretable_current: Union[Interpretable, None] = (
                 self.list_interpretable[-1] if self.list_interpretable else None
             )
+
+            # A constant reference to interpretable_current
+            interpretable_current_constant = interpretable_current
 
             # Previously made TraceCallResult object
             trace_call_result_previous: Union[TraceCallResult, None] = (
@@ -512,14 +527,13 @@ class CodeAnalyzer:
             # print("scope_current.get_interpretable()", scope_current.get_interpretable())
             # print("interpretable_current:", interpretable_current)
             # print("frame:", frame)
-            # print("frame.locals:")
-            # pprint.pprint(frame.f_locals)
+            #
             # print("str_event:", event)
             # print("arg", arg)
             # print("self:", self_from_frame_locals)
             # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
             # _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            # print("trace_call_result_new (MAY OR MAY NOT EXIST):\n\t{} {} {}".format(
+            # print("trace_call_result_new (MAY OR MAY NOT EXIST IN THE NEXT RUN):\n\t{} {} {}".format(
             #     _trace_call_result_new.code_line_strip,
             #     "|||",
             #     _trace_call_result_new.str_event)
@@ -528,17 +542,23 @@ class CodeAnalyzer:
             #     trace_call_result_previous,
             #     trace_call_result_previous.str_event if trace_call_result_previous else "")
             # )
-            # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
+            # # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
             # print("frame.f_code.co_varnames", frame.f_code.co_varnames)  # Current scope variables
-            # print("frame.f_code.co_cellvars", frame.f_code.co_cellvars)  # ?
+            # print("frame.f_code.co_cellvars", frame.f_code.co_cellvars)  # Current scope, Outer scope variables
             # print("frame.f_code.co_freevars", frame.f_code.co_freevars)  # ?
             #
             # print("frame.f_code.co_names", frame.f_code.co_names)  # Functions in the current callable scope
             # print("frame.f_code.co_consts", frame.f_code.co_consts)  # Values of variables, no variable name
             # print("frame.f_code.co_code", frame.f_code.co_code)  # Byte code
-            # print("frame.f_code.co_firstlineno", frame.f_code.co_firstlineno)  # Line number of the start of the callable's scope
+            # print("frame.f_code.co_firstlineno",
+            #       frame.f_code.co_firstlineno)  # Line number of the start of the callable's scope
             # print("frame.f_lineno", frame.f_lineno)  # Current Line # of code being executed
-            # print("frame.f_globals", frame.f_globals)  # Current global variables
+            # print("frame.f_locals:")  # Current local variables
+            # pprint(frame.f_locals)
+            # print("frame.f_globals")  # Current global variables
+            # pprint(frame.f_globals)
+            # print("frame.f_trace", frame.f_trace)
+            # print("frame.f_builtins", frame.f_builtins)  # Not useful
 
             ####################
             # DEBUGGING HEAD END
@@ -764,7 +784,7 @@ class CodeAnalyzer:
 
                             _interpretable_current_by_scope = scope_current.get_interpretable_top()
 
-                            # Special cass if _interpretable_current_by_scope's type is a class
+                            # Special case if _interpretable_current_by_scope's type is a class
                             if _interpretable_current_by_scope.get_interpretable_type() == constants.Keyword.CLASS:
 
                                 interpretable_current = _interpretable_current_by_scope
@@ -813,7 +833,7 @@ class CodeAnalyzer:
                     if (trace_call_result_new.get_event() == constants.Event.LINE and
                             self._trace_call_result_possible_on_board_event_line_for_class is None):
 
-                        # Replace _interpretable_current with a new one
+                        # Replace interpretable_current with a new one
                         interpretable_current = Interpretable(scope_current, constants.Keyword.CLASS)
                         self.list_interpretable.append(interpretable_current)
 
@@ -914,17 +934,22 @@ class CodeAnalyzer:
                 # Main behavior
                 ####################
                 
+                Notes:
+                    It is possible that interpretable_current may have not changed since the previous run
+                
                 IMPORTANT NOTES:
                     At this point 
-                        _interpretable_current MUST exist
+                        interpretable_current MUST exist
                         trace_call_result_new MUST exist
                 """
+
+                interpretable_current.set_interpretable_previous(interpretable_current_constant)
 
                 """
                 Handle special condition regarding the line of code below
                     .record_dict_for_line_previous(...)
                 is the trace_call_result_new. Basically, don't add trace_call_result_new to the 
-                _interpretable_current because it has nothing to do with the code being analyzed.
+                interpretable_current because it has nothing to do with the code being analyzed.
                 """
                 if __bool_event_return_and_record_dict_for_line_call_is_trace_call_result_previous:
                     """
@@ -932,7 +957,7 @@ class CodeAnalyzer:
                     the current interpretable because the current str_event is a return so no new Tnterpretables 
                     and therefore TraceCallResult objects will be made past this point.
                     """
-                    interpretable_current.get_comment_container().add_by_exhausting(
+                    interpretable_current.get_container_comment().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
@@ -940,11 +965,11 @@ class CodeAnalyzer:
                 else:
 
                     # Exhaust list of comment (The list may be empty)
-                    interpretable_current.get_comment_container().add_by_exhausting(
+                    interpretable_current.get_container_comment().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
-                    # Add the newly created TraceCallResult into _interpretable_current
+                    # Add the newly created TraceCallResult into interpretable_current
                     interpretable_current.add_trace_call_result(trace_call_result_new)
 
                     if self._count_interpretable_next_visibility_false == 0:
@@ -1097,7 +1122,7 @@ class CodeAnalyzer:
                         """
 
                         _container_comment = (
-                            _interpretable_popped.get_comment_container()
+                            _interpretable_popped.get_container_comment()
                         )  # 2.
 
                         if trace_call_result_previous.get_event() == constants.Event.RETURN:  # 3A
@@ -1114,7 +1139,7 @@ class CodeAnalyzer:
 
                             # 3A2. If the top interpretable exist by now, update its dict
                             if _interpretable_top is not None:
-                                _interpretable_top.get_comment_container().add(
+                                _interpretable_top.get_container_comment().add(
                                     _container_comment
                                 )
 
@@ -1156,7 +1181,7 @@ class CodeAnalyzer:
                         The Interpretable popped, which has Event.LINE, has a record_dict_for_line_previous()
                         may have a comment that is from record_dict_for_line_next()
                         """
-                        _container_comment = _interpretable_popped.get_comment_container()  # 2.
+                        _container_comment = _interpretable_popped.get_container_comment()  # 2.
 
                         self._list_comment_for_trace_call_result_next.append(
                             _container_comment)  # 2.
@@ -1206,7 +1231,7 @@ class CodeAnalyzer:
 
                         # 4.
                         if _interpretable_top:
-                            _interpretable_top.get_comment_container().add_by_exhausting(
+                            _interpretable_top.get_container_comment().add_by_exhausting(
                                 self._list_comment_for_trace_call_result_previous
                             )
 
@@ -1340,8 +1365,8 @@ class CodeAnalyzer:
                         The comment must be moved to the actual top Interpretable
                         """
                         _interpretable_top_actual: Interpretable = self.list_interpretable[-1]
-                        _interpretable_top_actual.get_comment_container().add(
-                            _interpretable_top_popped.get_comment_container()
+                        _interpretable_top_actual.get_container_comment().add(
+                            _interpretable_top_popped.get_container_comment()
                         )
 
                     self._decorator_used = False
@@ -1353,7 +1378,7 @@ class CodeAnalyzer:
                     top interpretable
                     """
                     _interpretable_top: Interpretable = self.list_interpretable[-1]
-                    _interpretable_top.get_comment_container().add_by_exhausting(
+                    _interpretable_top.get_container_comment().add_by_exhausting(
                         self._list_comment_for_trace_call_result_next
                     )
 
@@ -1383,7 +1408,7 @@ class CodeAnalyzer:
 
             execution_number_relative = len(list_interpretable)
 
-            interpretable.set_anlaysis_info(execution_number_relative, index)
+            interpretable.set_analysis_info(execution_number_relative, index)
 
             #####
 
@@ -1396,7 +1421,7 @@ class CodeAnalyzer:
 
             length_line_with_comments = (
                     length_line +
-                    len(interpretable.get_comment_container())
+                    len(interpretable.get_container_comment())
             )
 
             self.length_line_most_chars_with_comments = max(self.length_line_most_chars_with_comments,
@@ -1407,7 +1432,7 @@ class CodeAnalyzer:
             length_line_with_comments_with_dict_k_variable_v_value = (
                     length_line_with_comments +
                     len(str(
-                        trace_call_result_primary.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()))
+                        trace_call_result_primary.get_frame_f_locals_filtered_by_code_object_vars_all_filtered_by_frame_f_locals_previous()))
             )
 
             self.length_line_most_chars_with_comments_with_dict_k_variable_v_value = max(
@@ -1417,7 +1442,7 @@ class CodeAnalyzer:
 
     def record_comment_for_interpretable_next(self, comment: Union[constants.COMMENT]) -> None:
         """
-        Update update_dict_k_variable_v_value for _interpretable_current by appending the
+        Update update_dict_k_variable_v_value for interpretable_current by appending the
         dict to a list that will then be exhausted into the next trace_call_result
 
         :param comment:

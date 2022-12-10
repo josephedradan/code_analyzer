@@ -26,49 +26,57 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()  # Initialize analyzer
 code_analyzer.start()
 
-# ContainerComment that will be displayed on the next line
+temp = 23123123131231
 
+# Comment that will be displayed on the next line
 code_analyzer.record_comment_for_interpretable_next("Class definition")
-class X:
+def fff():
+    class X:
 
-    def __init__(self):
-        self.x = 2
+        def __init__(self):
+            self.x = 2
 
-    def __str__(self):
-        return 'fdf'
-
-
-var_a = 2
-var_b = 3
+        def __str__(self):
+            return 'fdf'
 
 
-def adder(temp_var):
-    """
-    From docstring
-    :param temp_var:
-    :return:
-    """
-    a = 424
-    b = a + temp_var
-    b = b + 5
-    return b
+    var_a = 2
+    var_b = 3
+
+    star = 123123123123
 
 
-adder(100)
+    def adder(temp_var):
+        """
+        From docstring
+        :param temp_var:
+        :return:
+        """
+        a = 424
+        b = a + temp_var
+        b = b + 5
+        return b
+
+    z = adder(100)
+    final = z + var_a + var_b
+    print(final)
+
+    def out():
+        f = 23
+        q = 53
+
+        def inner():
+            z = f + 23
+            a = 23 + z
+            return a
+
+        return inner() + q
 
 
-def out():
-    f = 23
+    var_c = out()
+    print(var_c)
 
-    def inner():
-        z = f + 23
-        a = 23 + z
-        return a
-
-    return inner()
-
-
-var_c = out()
+fff()
 
 code_analyzer.stop()
 code_analyzer.print()

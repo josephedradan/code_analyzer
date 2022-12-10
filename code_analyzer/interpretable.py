@@ -21,6 +21,8 @@ Tags:
 Reference:
 
 """
+from __future__ import annotations
+
 from typing import List, Union
 
 from code_analyzer import constants
@@ -46,9 +48,15 @@ class Interpretable:
         # Parent scope
         self.scope_parent: scope.Scope = scope_parent
 
+        self.interpretable_previous: Union[Interpretable, None] = None
+
+        self.interpretable_previous_by_scope: Union[Interpretable, None] = None
+
+        # Assign interpretable_previous_by_scope
+        self._set_interpretable_previous_by_scope(self.scope_parent.get_interpretable_top())
+
         # Immediately add self to scope_parent
         self.scope_parent.add_interpretable(self)
-
         """
         The interpretable type of this object
         
@@ -76,7 +84,7 @@ class Interpretable:
         # # List of strings that are comments
         # self.comment: List[str] = []
 
-        self.comment: ContainerComment = ContainerComment()
+        self.container_comment: ContainerComment = ContainerComment()
 
         ##################################################
         """
@@ -96,7 +104,21 @@ class Interpretable:
         """
         self.execution_index_global: Union[int, None] = None
 
-    def set_anlaysis_info(self, execution_number_relative: int, execution_index_global: int):
+    def _set_interpretable_previous_by_scope(self, interpretable_previous: Union[Interpretable, None]):
+        self.interpretable_previous_by_scope = interpretable_previous
+
+    def get_interpretable_previous_by_scope(self) -> Union[Interpretable, None]:
+        return self.interpretable_previous_by_scope
+
+    def set_interpretable_previous(self, interpretable_previous: Interpretable):
+
+        if interpretable_previous is not self:
+            self.interpretable_previous = interpretable_previous
+
+    def get_interpretable_previous(self) -> Union[Interpretable, None]:
+        return self.interpretable_previous
+
+    def set_analysis_info(self, execution_number_relative: int, execution_index_global: int):
         """
 
         :param execution_number_relative:
@@ -131,8 +153,8 @@ class Interpretable:
 
         self.list_trace_call_result.append(trace_call_result)
 
-    def get_comment_container(self) -> ContainerComment:
-        return self.comment
+    def get_container_comment(self) -> ContainerComment:
+        return self.container_comment
 
     def get_trace_call_result_primary(self) -> _trace_call_result.TraceCallResult:
         """
@@ -223,7 +245,7 @@ class Interpretable:
         # DEBUGGING END
         ####################
 
-        return f"{str(trace_call_result)} | {self.comment}"
+        return f"{str(trace_call_result)} | {self.container_comment}"
 
     def __hash__(self):
         """

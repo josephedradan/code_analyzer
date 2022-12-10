@@ -27,7 +27,7 @@ Reference:
 """
 from __future__ import annotations
 
-from typing import Union, List
+from typing import Union, List, Iterable, Set
 
 from code_analyzer import interpretable
 from code_analyzer import trace_call_result
@@ -52,6 +52,10 @@ class Scope:
         ####################
 
         self.list_interpretable: List[interpretable.Interpretable] = []
+
+        ####################
+
+        self.set_variable_exclusion: Set[str] = set()
 
     def get_scope_parent(self) -> Union[Scope, None]:
         return self.scope_parent
@@ -104,7 +108,6 @@ class Scope:
         trace_call_result_first = self._get_trace_call_result_first()
 
         if trace_call_result_first:
-
             return self._get_indent_depth_relative(
                 trace_call_result_first,
                 trace_call_result_given
@@ -173,3 +176,15 @@ class Scope:
             return self.list_interpretable[index]
         except IndexError as e:
             return None
+
+    def update_set_variable_exclusion(self, iterable_: Iterable):
+        """
+
+        :param iterable_:
+        :return:
+        """
+
+        self.set_variable_exclusion.update(iterable_)
+
+    def get_set_variable_exclusion(self) -> Set[str]:
+        return self.set_variable_exclusion

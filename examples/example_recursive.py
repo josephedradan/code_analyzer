@@ -26,12 +26,12 @@ from code_analyzer import CodeAnalyzer
 code_analyzer = CodeAnalyzer()  # Initialize analyzer
 code_analyzer.start()
 
-# ContainerComment that will be displayed on the next line
+# Comment that will be displayed on the next line
 code_analyzer.record_comment_for_interpretable_next({"Function definition here!": "Wow!"})
 
 
 def recursive(depth: int) -> int:
-    # ContainerComment that will be displayed on the previous line
+    # Comment that will be displayed on the previous line
     code_analyzer.record_comment_for_interpretable_previous({"__depth": depth})
     if depth <= 0:
         code_analyzer.record_comment_for_interpretable_next({"Final depth": depth})

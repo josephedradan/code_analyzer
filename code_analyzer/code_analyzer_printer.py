@@ -12,7 +12,6 @@ Description:
 
 Notes:
 
-
 IMPORTANT NOTES:
 
 Explanation:
@@ -20,6 +19,9 @@ Explanation:
 Tags:
 
 Reference:
+
+TODO:
+    REDESIGN ENTIRE FILE
 
 """
 
@@ -30,16 +32,18 @@ import os
 import sys
 from typing import List, Union, Callable, Literal, Generator, Any, Dict
 
-import code_analyzer as _code_analyzer
 import colorama
 import pandas as pd
-from code_analyzer import constants
-from code_analyzer.interpretable import Interpretable
-from code_analyzer.trace_call_result import TraceCallResult
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+
+import code_analyzer as _code_analyzer
+from code_analyzer import constants
+from code_analyzer.container_comment import ContainerComment
+from code_analyzer.interpretable import Interpretable
+from code_analyzer.trace_call_result import TraceCallResult
 
 colorama.init()
 
@@ -141,7 +145,7 @@ DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE: Dict[Attribute, ContainerMapping
         "  {}"
     ),
     Attribute.COMMENT: ContainerMapping(
-        "Comments",
+        "(Comments)",
         "  {}"
     ),
 
@@ -194,10 +198,19 @@ def get_str_dict_interpretable_data(dict_interpretable_data: DICT_K_ATTRIBUTE_V_
     :return:
     """
 
-    str_ = "".join([
-        DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[key].str_format.format(value) for key, value in
-        dict_interpretable_data.items()
-    ])
+    list_string: List[str] = []
+
+    for key, value in dict_interpretable_data.items():
+
+        if key == Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS or key == Attribute.COMMENT:
+            if Attribute.CODE in dict_interpretable_data and not value:
+                continue
+
+        list_string.append(DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[key].str_format.format(value))
+
+    str_ = "".join(
+        list_string
+    )
 
     return str_
 
@@ -231,10 +244,10 @@ class DataIntermediateInterpretable:
         self.code_spacing, self.code = self.trace_call_result.get_spacing_corrected_and_line()
 
         self.dict_k_variable_v_value__frame_f_locals: dict = (
-            self.trace_call_result.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+            self.trace_call_result.get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous()
         )
 
-        self.comment = self.interpretable.get_comment_container()
+        self.comment: ContainerComment = self.interpretable.get_container_comment()
 
         #####
 
@@ -525,6 +538,9 @@ class CodeAnalyzerPrinter:
         """
         Do the rich version of execution analysis
 
+        Notes:
+            On the subject of rich styles,
+
         :param console:
         :return:
         """
@@ -549,26 +565,26 @@ class CodeAnalyzerPrinter:
 
         if _bool_code_exists:
 
-            _str_dict = ""
+            _str_dict_k_variable_v_attribute = ""
             if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS,
                                                                   None) is not None:
-                _str_dict = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                _str_dict_k_variable_v_attribute = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
                     Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS].str_format.format(
                     DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
                         Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS].name
-                )
+                ).rstrip()
 
-            _str_list = ""
+            _str_list_comment = ""
             if DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE.get(Attribute.COMMENT, None) is not None:
-                _str_list = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                _str_list_comment = DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
                     Attribute.COMMENT].str_format.format(
                     DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.COMMENT].name
-                )
+                ).rstrip()
 
             dict_k_attribute_v_attribute_name[Attribute.CODE] = "{}{}{}".format(
                 DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[Attribute.CODE].name,
-                _str_dict,
-                _str_list
+                _str_dict_k_variable_v_attribute,
+                _str_list_comment
             )
 
         for attribute, attribute_name in dict_k_attribute_v_attribute_name.items():
@@ -958,15 +974,19 @@ def _get_dict_interpretable_data_styled(interpretable: Interpretable,
         dict_temp[Attribute.COMMENT] if dict_temp[Attribute.COMMENT] else ""
     )
 
+    # TODO: Redesign entire file
     if style == Style.COLORAMA:
-        dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = (
-                colorama.Fore.RED + str(
-            dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]) + colorama.Style.RESET_ALL
-        )
 
-        dict_temp[Attribute.COMMENT] = (
-                colorama.Fore.RED + str(dict_temp[Attribute.COMMENT]) + colorama.Style.RESET_ALL
-        )
+        if dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]:
+            dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = (
+                    colorama.Fore.RED + str(
+                dict_temp[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]) + colorama.Style.RESET_ALL
+            )
+
+        if dict_temp[Attribute.COMMENT]:
+            dict_temp[Attribute.COMMENT] = (
+                    colorama.Fore.MAGENTA + str(dict_temp[Attribute.COMMENT]) + colorama.Style.RESET_ALL
+            )
 
         # TODO: Design the below better
         trace_call_result = interpretable.get_trace_call_result_primary()
@@ -984,7 +1004,7 @@ def _get_str_code_styled(trace_call_result: TraceCallResult, style: STYLES = Non
     """
     spacing, line = trace_call_result.get_spacing_corrected_and_line()
 
-    if style == Style.COLORAMA:
+    if style == Style.COLORAMA and line:
 
         color_fore: Union[str, colorama.Fore] = ""
         color_back: Union[str, colorama.Back] = ""

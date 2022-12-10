@@ -337,40 +337,188 @@ class TraceCallResult:
     def get_frame_f_locals(self) -> dict:
         return self.frame_f_locals_instance_current
 
-    def get_frame_f_locals_filtered_by_frame_f_code_co_varnames(self) -> dict:
+    def get_code_object_vars_all(self) -> Tuple[str, ...]:
         """
-        Get the current instance of frame.f_locals when this object was created filtered by the variables from
-        frame.f_code.co_varnames
-
-        Basically, get the union between the keys of frame.f_locals (dict) and the variables in
-        frame.f_code.co_varnames (tuple)
+        Return a tuple containing all vars from the code object
 
         :return:
         """
-        dict_temp = {k: self.frame_f_locals_instance_current[k] for k in self.code_object.co_varnames
+        return (*self.code_object.co_varnames,  # NOQA
+                *self.code_object.co_cellvars,
+                *self.code_object.co_freevars)
+
+    def get_frame_f_locals_filtered_by_code_object_vars_all(self) -> dict:
+        """
+        Get the current instance of frame.f_locals when this object was created filtered by the variables from
+        self.code_object_vars_all()
+
+        Basically, get the union between the keys of frame.f_locals (dict) and the variables in
+        self.code_object_vars_all() (tuple)
+
+        :return:
+        """
+        dict_temp = {k: self.frame_f_locals_instance_current[k] for k in self.get_code_object_vars_all()
                      if k in self.frame_f_locals_instance_current}
 
         return dict_temp
 
-    def get_frame_f_locals_filtered_by_frame_f_code_co_varnames_difference(self) -> dict:
+    def get_frame_f_locals_filtered_by_code_object_vars_all_filtered_by_frame_f_locals_previous(self) -> dict:
+        """
 
-        interpretable_previous = self.interpretable.scope_parent.get_interpretable(-2)
+        Notes:
+            Statement 1.
+                This conditional replaces interpretable_previous_by_scope because its TraceCallResult will have an
+                Event == Event.CALL. This TraceCallResult does not contain the same f_locals or f_code variables
+                as the other TraceCallResult objects in the same scope so the primary action of finding the difference
+                between this object and a previous interpretable will result in incorrect information being returned.
 
-        if interpretable_previous is None:
-            return self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+                Basically, look at the previous previous interpretable as it may have the correct/same frame object
+                as this object in which conducting the difference will result in the correct output.
 
-        trace_call_result_interpretable_previous: TraceCallResult = interpretable_previous.get_trace_call_result_primary()
+        :return:
+        """
+        interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
 
-        dict_frame_f_locals_filtered_by_frame_f_code_co_varnames = (
-            self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+        dict_frame_f_locals_filtered_by_code_object_vars_all = (
+            self.get_frame_f_locals_filtered_by_code_object_vars_all()
         )
 
-        dict_difference = dict((
-                set(dict_frame_f_locals_filtered_by_frame_f_code_co_varnames.items()) ^
-                set(trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_frame_f_code_co_varnames().items())
-        ))
+        if interpretable_previous_by_scope is None:
+            return dict_frame_f_locals_filtered_by_code_object_vars_all
 
-        dict_difference_filtered = {k: v for k, v in dict_difference.items()
-                                    if k in dict_frame_f_locals_filtered_by_frame_f_code_co_varnames}
+        # Statement 1
+        elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
+            interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
 
-        return self.get_frame_f_locals_filtered_by_frame_f_code_co_varnames()
+        trace_call_result_interpretable_previous: TraceCallResult = (
+            interpretable_previous_by_scope.get_trace_call_result_primary()
+        )
+
+        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
+            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all()
+        )
+
+        # Old style
+        # dict_difference = dict((
+        #         set(dict_frame_f_locals_filtered_by_code_object_vars_all.items()) ^
+        #         set(
+        #             trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_code_object_vars_all().items())
+        # ))
+        #
+        # dict_difference_filtered = {k: v for k, v in dict_difference.items() if
+        #                             k in dict_frame_f_locals_filtered_by_code_object_vars_all}
+
+        # New style
+        dict_difference = {
+            k: v for k, v in dict_frame_f_locals_filtered_by_code_object_vars_all.items()
+            if
+            k not in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
+            or
+            (
+                    k in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
+                    and
+                    dict_frame_f_locals_filtered_by_code_object_vars_all[k] !=
+                    dict_frame_f_locals_filtered_by_code_object_vars_all_previous[k]
+            )
+
+        }
+
+        return dict_difference
+
+    def get_frame_f_locals_filtered_by_set_variable_exclusion(self) -> dict:
+
+        set_variable_exclusion = self.interpretable.get_scope_parent().get_set_variable_exclusion()
+
+        dict_temp = {
+            k: v for k, v in self.frame_f_locals_instance_current.items() if k not in set_variable_exclusion
+        }
+
+        return dict_temp
+
+    def get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous(self):
+
+        interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
+
+        dict_frame_f_locals_filtered_by_set_variable_exclusion = (
+            self.get_frame_f_locals_filtered_by_set_variable_exclusion()
+        )
+
+        if interpretable_previous_by_scope is None:
+            return dict_frame_f_locals_filtered_by_set_variable_exclusion
+
+        elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
+            interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
+
+        trace_call_result_interpretable_previous: TraceCallResult = (
+            interpretable_previous_by_scope.get_trace_call_result_primary()
+        )
+
+        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
+            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_set_variable_exclusion()
+        )
+
+        # New style
+        dict_difference = {
+            k: v for k, v in dict_frame_f_locals_filtered_by_set_variable_exclusion.items()
+            if k not in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
+               or
+               (
+                       k in dict_frame_f_locals_filtered_by_code_object_vars_all_previous
+                       and
+                       dict_frame_f_locals_filtered_by_set_variable_exclusion[k] !=
+                       dict_frame_f_locals_filtered_by_code_object_vars_all_previous[k]
+               )
+
+        }
+
+        return dict_difference
+
+    def get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous(self):
+
+        interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
+
+        dict_frame_f_locals_filtered_by_set_variable_exclusion = (
+            self.get_frame_f_locals_filtered_by_set_variable_exclusion()
+        )
+
+        if interpretable_previous_by_scope is None:
+            return dict_frame_f_locals_filtered_by_set_variable_exclusion
+
+        elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
+            interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
+
+        trace_call_result_interpretable_previous: TraceCallResult = (
+            interpretable_previous_by_scope.get_trace_call_result_primary()
+        )
+
+        dict_frame_f_locals_filtered_by_code_object_vars_all_previous = (
+            trace_call_result_interpretable_previous.get_frame_f_locals_filtered_by_set_variable_exclusion()
+        )
+
+        dict_difference = get_dict_difference(dict_frame_f_locals_filtered_by_set_variable_exclusion,
+                                              dict_frame_f_locals_filtered_by_code_object_vars_all_previous)
+
+        return dict_difference
+
+
+def get_dict_difference(dict_primary: dict, dict_secondary: dict) -> dict:
+    # dict_difference = {
+    #     k: v for k, v in dict_primary.items()
+    #     if k not in dict_secondary
+    #        or
+    #        (
+    #                k in dict_secondary
+    #                and
+    #                dict_primary[k] !=
+    #                dict_secondary[k]
+    #        )
+    #
+    # }
+
+    dict_difference = {}
+
+    for k, v in dict_primary.items():
+        if k not in dict_secondary or (k in dict_secondary and dict_primary[k] != dict_secondary[k]):
+            dict_difference[k] = v
+
+    return dict_difference

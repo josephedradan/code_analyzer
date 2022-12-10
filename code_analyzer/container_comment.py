@@ -28,12 +28,12 @@ class ContainerComment:
 
     def __init__(self):
 
-        self.list_str: List[str] = []
+        self.list_any: List[Any] = []
 
         self.dict_k_variable_value: dict = {}
 
     def get_list_str(self) -> List[str]:
-        return self.list_str
+        return self.list_any
 
     def get_dict_k_variable_value(self) -> dict:
         return self.dict_k_variable_value
@@ -41,20 +41,20 @@ class ContainerComment:
     def add(self, object_: Any):
 
         if isinstance(object_, ContainerComment):
-            self.list_str.extend(object_.list_str)
+            self.list_any.extend(object_.list_any)
             self.dict_k_variable_value.update(object_.dict_k_variable_value)
 
         elif isinstance(object_, dict):
             self.dict_k_variable_value.update(object_)
 
         elif isinstance(object_, str):
-            self.list_str.append(object_)
+            self.list_any.append(object_)
 
         elif isinstance(object_, Iterable):
-            self.list_str.extend(object_)
+            self.list_any.extend(object_)
 
         else:
-            self.list_str.append(object_)
+            self.list_any.append(object_)
 
     def add_by_exhausting(self, object_: List):
 
@@ -62,16 +62,28 @@ class ContainerComment:
             item = object_.pop()
             self.add(item)
 
-    def __str__(self):
+    def __str__(self) -> str:
 
         list_items = []
 
-        if self.list_str:
-            list_items.append(str(self.list_str))
-        if self.dict_k_variable_value:
-            list_items.append(str(self.dict_k_variable_value))
+        for item in self.list_any:
 
-        return ", ".join(list_items)
+            if isinstance(item, str):
+                list_items.append("'{}'".format(item))
+            else:
+                list_items.append(item)
+
+        for k, v in self.dict_k_variable_value.items():
+
+            if isinstance(v, str):
+                list_items.append("'{}': '{}'".format(k, v))
+            else:
+                list_items.append("'{}': {}".format(k, v))
+
+        if list_items:
+            return "({})".format(", ".join(list_items))
+
+        return ""
 
     def __len__(self):
         return len(self.__str__())
