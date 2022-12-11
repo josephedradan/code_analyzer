@@ -17,7 +17,7 @@ method call to see the code in a file might be more useful/helpful.
     colorama
     pandas
 
-### Example?
+### Example:
 
     from code_analyzer import CodeAnalyzer
     
@@ -56,7 +56,7 @@ method call to see the code in a file might be more useful/helpful.
 ### Output
 ![example_recursive.png](https://raw.githubusercontent.com/josephedradan/code_analyzer/main/images/example_recursive.png)
 
-[Rich output html](https://github.com/josephedradan/code_analyzer/blob/main/examples/example_recursive_code_analysis_rich.html)
+## [Rich output html](https://htmlpreview.github.io/?https://github.com/josephedradan/code_analyzer/blob/main/examples/example_recursive_code_analysis_rich.html)
 ### Notes
 
 In the output of a print (Such as in the image above):
