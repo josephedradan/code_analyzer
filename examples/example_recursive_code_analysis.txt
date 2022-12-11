@@ -8,7 +8,7 @@ Execution Analysis
 
 Execution Index Line #  Scope depth   Indent depth  Interpretable Count   Code  {Variable: Value}  (Comments)
 0               33      0             0             1                     def recursive(depth: int) -> int:  ('Function definition here!')
-1               44      0             0             1                     recursive(5)  {'recursive': <function recursive at 0x0000021D49207040>}  ('This is where the fun begins')
+1               44      0             0             1                     recursive(5)  {'recursive': <function recursive at 0x000001F24B987040>}  ('This is where the fun begins')
 2               33      0             0             2                     def recursive(depth: int) -> int:  {'depth': 5}  ('__depth': 5)
 3               36      1             1             1                         if depth <= 0:  {'depth': 5}
 4               40      1             1             1                         return recursive(depth - 1)
@@ -51,7 +51,7 @@ Line #: 44
 Code: recursive(5)
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                                          {Variable: Value}                        (Comments)
-0                1            0                    1  {'recursive': <function recursive at 0x0000021D49207040>}  ('This is where the fun begins')
+0                1            0                    1  {'recursive': <function recursive at 0x000001F24B987040>}  ('This is where the fun begins')
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_recursive.py

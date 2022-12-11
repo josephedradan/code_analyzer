@@ -1427,12 +1427,10 @@ class CodeAnalyzer:
             self.length_line_most_chars_with_comments = max(self.length_line_most_chars_with_comments,
                                                             length_line_with_comments)
 
-            length_dict_k_variable_v_value = "{}: {}"
-
             length_line_with_comments_with_dict_k_variable_v_value = (
                     length_line_with_comments +
                     len(str(
-                        trace_call_result_primary.get_frame_f_locals_filtered_by_code_object_vars_all_filtered_by_frame_f_locals_previous()))
+                        trace_call_result_primary.get_frame_f_locals_filtered_by_set_variable_exclusion_filtered_by_frame_f_locals_previous()))
             )
 
             self.length_line_most_chars_with_comments_with_dict_k_variable_v_value = max(
