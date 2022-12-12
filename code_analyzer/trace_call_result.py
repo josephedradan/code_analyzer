@@ -383,7 +383,7 @@ class TraceCallResult:
 
         :return:
         """
-        return self.asdasdas(use_filtered_by_set_variable_exclusion=False)
+        return self.get_frame_f_locals_filtered(use_filtered_by_set_variable_exclusion=False)
 
     def get_frame_f_locals_filtered_by_set_variable_exclusion(self) -> dict:
 
@@ -406,9 +406,9 @@ class TraceCallResult:
 
         :return:
         """
-        return self.asdasdas(use_filtered_by_set_variable_exclusion=True)
+        return self.get_frame_f_locals_filtered(use_filtered_by_set_variable_exclusion=True)
 
-    def asdasdas(self, use_filtered_by_set_variable_exclusion: bool = False):
+    def get_frame_f_locals_filtered(self, use_filtered_by_set_variable_exclusion: bool = False):
         """
 
         Notes:
@@ -440,6 +440,9 @@ class TraceCallResult:
         elif interpretable_previous_by_scope.get_trace_call_result_primary().get_event() == Event.CALL:
             interpretable_previous_by_scope = interpretable_previous_by_scope.get_interpretable_previous_by_scope()
 
+        if interpretable_previous_by_scope is None:
+            raise Exception("interpretable_previous_by_scope is None")
+        
         trace_call_result_interpretable_previous: TraceCallResult = (
             interpretable_previous_by_scope.get_trace_call_result_primary()
         )
