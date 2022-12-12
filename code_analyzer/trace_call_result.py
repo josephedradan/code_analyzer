@@ -200,6 +200,12 @@ class TraceCallResult:
         # DEBUGGING END
         ####################
 
+
+        indent_depth_corrected = 0
+        
+        if self.interpretable:
+            indent_depth_corrected = self.interpretable.scope_parent.get_indent_depth_corrected() 
+
         """
         Math
             1. Indent depth based on the First Interpretable in the scope.
@@ -209,7 +215,7 @@ class TraceCallResult:
             3. Offset based.
         """
         result = (
-                self.interpretable.scope_parent.get_indent_depth_corrected() +
+                indent_depth_corrected +
                 self.get_indent_depth_relative() +
                 self.indent_depth_offset
         )
@@ -381,6 +387,9 @@ class TraceCallResult:
 
     def get_frame_f_locals_filtered_by_set_variable_exclusion(self) -> dict:
 
+        if self.interpretable is None:
+            raise Exception("self.interpretable is None")
+                            
         set_variable_exclusion = self.interpretable.get_scope_parent().get_set_variable_exclusion()
 
         dict_temp = {
@@ -414,7 +423,9 @@ class TraceCallResult:
 
         :return:
         """
-
+        if self.interpretable is None:
+            raise Exception("self.interpretable is None")
+        
         interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
 
         if use_filtered_by_set_variable_exclusion:

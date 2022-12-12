@@ -110,7 +110,7 @@ class Interpretable:
     def get_interpretable_previous_by_scope(self) -> Union[Interpretable, None]:
         return self.interpretable_previous_by_scope
 
-    def set_interpretable_previous(self, interpretable_previous: Interpretable):
+    def set_interpretable_previous(self, interpretable_previous: Union[Interpretable, None]):
 
         if interpretable_previous is not self:
             self.interpretable_previous = interpretable_previous

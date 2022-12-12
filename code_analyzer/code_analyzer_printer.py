@@ -225,7 +225,7 @@ class DataIntermediateInterpretable:
 
         #####
 
-        self.execution_index_relative: int = self.interpretable.get_execution_index_relative()
+        self.execution_index_relative: Union[int, None] = self.interpretable.get_execution_index_relative()
 
         self.trace_call_result: TraceCallResult = self.interpretable.get_trace_call_result_primary()
 
@@ -239,8 +239,8 @@ class DataIntermediateInterpretable:
 
         self.interpretable_count = self.interpretable.get_interpretable_count()
 
-        self.code_spacing: int
-        self.code: int
+        self.code_spacing: str
+        self.code: str
         self.code_spacing, self.code = self.trace_call_result.get_spacing_corrected_and_line()
 
         self.dict_k_variable_v_value__frame_f_locals: dict = (
@@ -414,7 +414,7 @@ class CodeAnalyzerPrinter:
 
             return string
 
-        generator_str_row_interpretable: Generator[str] = (
+        generator_str_row_interpretable: Generator[str, None, None] = (
             get_str_row_interpretable(interpretable) for interpretable in self.code_analyzer.list_interpretable
             if interpretable.visibility is True
         )
@@ -673,7 +673,7 @@ class CodeAnalyzerPrinter:
                 #     text_dict_k_variable_v_value
                 # )
 
-                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]: Text = Text(
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]= Text(
                     _str_dict_k_variable_v_value,
                     # style="rgb(255,0,0)",  # Red
                     style="dark_orange",  # rgb(215,95,0)
@@ -690,7 +690,7 @@ class CodeAnalyzerPrinter:
                     dict_k_attribute_v_data__filtered[Attribute.COMMENT]
                 )).rstrip()
 
-                dict_k_attribute_v_data__filtered[Attribute.COMMENT]: Text = Text(
+                dict_k_attribute_v_data__filtered[Attribute.COMMENT] = Text(
                     _str_comment,
                     style="rgb(255,0,0)",  # Red
                     # style="dark_orange",  # rgb(215,95,0)

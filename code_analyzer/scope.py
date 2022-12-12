@@ -70,6 +70,8 @@ class Scope:
             list_trace_call_result = self.list_interpretable[0].get_list_trace_call()
             return list_trace_call_result[0]
 
+        return None
+        
     def add_interpretable(self, interpretable: interpretable.Interpretable) -> None:
         self.list_interpretable.append(interpretable)
 

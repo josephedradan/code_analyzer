@@ -9,16 +9,16 @@ Execution Analysis
 Execution Index Line #  Scope depth   Indent depth  Interpretable Count   Code  {Variable: Value}  (Comments)
 0               29      0             0             1                     temp = 23123123131231
 1               35      0             0             1                     def fff():  {'temp': 23123123131231}  ('Class definition')
-2               79      0             0             1                     fff()  {'fff': <function fff at 0x000002884AABE940>}
+2               79      0             0             1                     fff()  {'fff': <function fff at 0x0000022D4A62E1F0>}
 3               35      0             0             2                     def fff():
 4               36      1             1             1                         class X:
 5               38      2             2             1                             def __init__(self):  {'__module__': '__main__', '__qualname__': 'fff.<locals>.X'}
-6               41      2             2             1                             def __str__(self):  {'__init__': <function fff.<locals>.X.__init__ at 0x000002884C502B80>}
+6               41      2             2             1                             def __str__(self):  {'__init__': <function fff.<locals>.X.__init__ at 0x0000022D4C075940>}
 7               44      1             1             1                         var_a = 2  {'X': <class '__main__.fff.<locals>.X'>}
 8               45      1             1             1                         var_b = 3  {'var_a': 2}
 9               47      1             1             1                         star = 123123123123  {'var_b': 3}
 10              49      1             1             1                         def adder(temp_var):  {'star': 123123123123}
-11              60      1             1             1                         z = adder(100)  {'adder': <function fff.<locals>.adder at 0x000002884AABE280>}
+11              60      1             1             1                         z = adder(100)  {'adder': <function fff.<locals>.adder at 0x0000022D4A62E280>}
 12              49      1             1             2                         def adder(temp_var):  {'temp_var': 100}
 13              55      2             2             1                             a = 424  {'temp_var': 100}
 14              56      2             2             1                             b = a + temp_var  {'a': 424}
@@ -27,12 +27,12 @@ Execution Index Line #  Scope depth   Indent depth  Interpretable Count   Code  
 17              61      1             1             1                         final = z + var_a + var_b  {'z': 529}
 18              62      1             1             1                         print(final)  {'final': 534}
 19              64      1             1             1                         def out():
-20              75      1             1             1                         var_c = out()  {'out': <function fff.<locals>.out at 0x000002884C502CA0>}
+20              75      1             1             1                         var_c = out()  {'out': <function fff.<locals>.out at 0x0000022D4C075A60>}
 21              64      1             1             2                         def out():
 22              65      2             2             1                             f = 23
 23              66      2             2             1                             q = 53  {'f': 23}
 24              68      2             2             1                             def inner():  {'q': 53}
-25              73      2             2             1                             return inner() + q  {'inner': <function fff.<locals>.out.<locals>.inner at 0x000002884C502D30>}
+25              73      2             2             1                             return inner() + q  {'inner': <function fff.<locals>.out.<locals>.inner at 0x0000022D4C075AF0>}
 26              68      2             2             2                             def inner():
 27              69      3             3             1                                 z = f + 23 + q  {'f': 23, 'q': 53}
 28              70      3             3             1                                 a = 23 + z  {'z': 99}
@@ -65,7 +65,7 @@ Line #: 79
 Code: fff()
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                              {Variable: Value} (Comments)
-0                2            0                    1  {'fff': <function fff at 0x000002884AABE940>}           
+0                2            0                    1  {'fff': <function fff at 0x0000022D4A62E1F0>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_basic.py
@@ -89,7 +89,7 @@ Line #: 41
 Code: def __str__(self):
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                                                       {Variable: Value} (Comments)
-0                6            2                    1  {'__init__': <function fff.<locals>.X.__init__ at 0x000002884C502B80>}           
+0                6            2                    1  {'__init__': <function fff.<locals>.X.__init__ at 0x0000022D4C075940>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_basic.py
@@ -130,7 +130,7 @@ Line #: 60
 Code: z = adder(100)
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                                               {Variable: Value} (Comments)
-0               11            1                    1  {'adder': <function fff.<locals>.adder at 0x000002884AABE280>}           
+0               11            1                    1  {'adder': <function fff.<locals>.adder at 0x0000022D4A62E280>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_basic.py
@@ -195,7 +195,7 @@ Line #: 75
 Code: var_c = out()
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                                           {Variable: Value} (Comments)
-0               20            1                    1  {'out': <function fff.<locals>.out at 0x000002884C502CA0>}           
+0               20            1                    1  {'out': <function fff.<locals>.out at 0x0000022D4C075A60>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_basic.py
@@ -228,7 +228,7 @@ Line #: 73
 Code: return inner() + q
 Call Count: 1
    Execution Index  Scope depth  Interpretable Count                                                            {Variable: Value} (Comments)
-0               25            2                    1  {'inner': <function fff.<locals>.out.<locals>.inner at 0x000002884C502D30>}           
+0               25            2                    1  {'inner': <function fff.<locals>.out.<locals>.inner at 0x0000022D4C075AF0>}           
 
 
 Filename: H:/Programming/Python/projects_github/code_analyzer/examples/example_basic.py

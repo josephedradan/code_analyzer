@@ -183,7 +183,7 @@ class CodeAnalyzer:
         (This will most likely be restored)
 
         """
-        self._trace_function_original: Union[TracebackType, None] = None
+        self._trace_function_original: Union[Callable, None] = None
 
         """
         Original trace function in the scope where the start() method is called (This will most likely be restored)
@@ -192,7 +192,7 @@ class CodeAnalyzer:
             Note that the location of this trace function is located where the start() method is located 
 
         """
-        self._trace_function_original_base: Union[TracebackType, None] = None
+        self._trace_function_original_base: Union[Callable, None] = None
 
         """
         Scope depth based on if a Event call had this object as its first parameter (This is used to not trace
@@ -401,7 +401,7 @@ class CodeAnalyzer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
 
-    def __call__(self, callable_: Callable = None):
+    def __call__(self, callable_: Union[Callable, None] = None) -> Callable:
         """
         Higher order decorator
 
@@ -685,7 +685,7 @@ class CodeAnalyzer:
                                             x | Return  # This return will make the previous TraceCallResult a return
                                     
                                 In the example above, the final return will have an Event == RETURN, but it shouldn't
-                                because the original code did not have a actual return written in the get function
+                                because the original code did not have a actual return written in the get function.
                             
                             else condition:
                                 Assumes that both the current Interpretable (from self.list_interpretable)
@@ -775,7 +775,10 @@ class CodeAnalyzer:
                         """
 
                         # Check if both Interpretables are itself (Implies that the scope is the same)
-                        if interpretable_current == _interpretable_current_by_scope:
+                        if (interpretable_current == _interpretable_current_by_scope):
+
+                            if trace_call_result_previous is None:
+                                raise Exception("trace_call_result_previous is None")
 
                             if trace_call_result_previous.get_python_keyword() == constants.Keyword.RETURN:
                                 interpretable_current.set_interpretable_type(constants.Event.RETURN)
@@ -783,6 +786,9 @@ class CodeAnalyzer:
                         else:
 
                             _interpretable_current_by_scope = scope_current.get_interpretable_top()
+
+                            if _interpretable_current_by_scope is None:
+                                raise Exception("_interpretable_current_by_scope is None")
 
                             # Special case if _interpretable_current_by_scope's type is a class
                             if _interpretable_current_by_scope.get_interpretable_type() == constants.Keyword.CLASS:
@@ -794,11 +800,15 @@ class CodeAnalyzer:
                                 # Should be the Interpretable right before the function call
                                 _interpretable_current_by_scope = scope_current.get_interpretable(-2)
 
+                                if _interpretable_current_by_scope is None:
+                                    raise Exception("_interpretable_current_by_scope is None")
+
                                 interpretable_current = _interpretable_current_by_scope
 
                             _trace_call_result_line = interpretable_current.get_trace_call_result_primary()
 
-                            if _trace_call_result_line.get_python_keyword() == constants.Keyword.RETURN:
+                            if (_trace_call_result_line.get_python_keyword() == constants.Keyword.RETURN
+                                    and interpretable_current is not None):
                                 interpretable_current.set_interpretable_type(constants.Event.RETURN)
 
                     """
@@ -943,6 +953,12 @@ class CodeAnalyzer:
                         trace_call_result_new MUST exist
                 """
 
+                if interpretable_current is None:
+                    raise Exception("interpretable_current is None")
+
+                if trace_call_result_new is None:
+                    raise Exception("trace_call_result_new None")
+
                 interpretable_current.set_interpretable_previous(interpretable_current_constant)
 
                 """
@@ -1085,6 +1101,12 @@ class CodeAnalyzer:
 
                     _interpretable_popped = scope_current.pop_interpretable()  # 1.
 
+                    if _interpretable_popped is None:
+                        raise Exception("_interpretable_popped is None")
+
+                    if trace_call_result_previous is None:
+                        raise Exception("trace_call_result_previous is None")
+
                     # Special condition when the _procedure is not HIDE_LINE_NEXT
                     if _procedure != CodeAnalyzer._Procedure.HIDE_LINE_NEXT:
 
@@ -1133,6 +1155,10 @@ class CodeAnalyzer:
                             # 3A1. IF NONE LOOK AT THE PARENT SCOPE FOR THE INTERPRETABLE
                             if _interpretable_top is None:
                                 _scope_parent = scope_current.get_scope_parent()
+                                
+                                if _scope_parent is None:
+                                    raise Exception("_scope_parent is None")
+
 
                                 # This interpretable should be the top interpretable of the previous scope
                                 _interpretable_top = _scope_parent.get_interpretable_top()  # Unlikely to be None
@@ -1212,6 +1238,9 @@ class CodeAnalyzer:
                                 _interpretable_top.get_trace_call_result_primary()
                             )
 
+                            if _trace_call_result_primary is None:
+                                raise Exception("_trace_call_result_primary is None")
+                            
                             # 3A1. Top Interpretable's primary TraceCallResult has Event == CALL
                             if _trace_call_result_primary.get_event() == constants.Event.CALL:
                                 """
@@ -1299,10 +1328,13 @@ class CodeAnalyzer:
         """
 
         if self._running:  # This guard prevents potential exceptions and bugs from occurring
+            
+            if self._index_frame_object is None:
+                raise Exception("self._index_frame_object is None")
 
             # Restoring the current trace functions to its original function
-            sys._getframe(self._index_frame_object).f_trace = self._trace_function_original_base
-            sys.settrace(self._trace_function_original)
+            sys._getframe(self._index_frame_object).f_trace = self._trace_function_original_base  # NOQA
+            sys.settrace(self._trace_function_original)  # NOQA
 
             ##########
 
@@ -1462,7 +1494,7 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_PREVIOUS)
 
-    def hide_interpretable_previous(self, amount: int= 1):
+    def hide_interpretable_previous(self, amount: int = 1):
         """
         Will hide the previous interpretable from being seen when being printed to the terminal
         or exported to a file. Think of this function as hiding the previous interpreted line of code

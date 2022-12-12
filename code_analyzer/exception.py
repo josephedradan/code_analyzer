@@ -21,8 +21,11 @@ Tags:
 Reference:
 
 """
+
+
 class NoScopeAvailable(Exception):
     pass
+
 
 class IllegalCall(Exception):
     pass
