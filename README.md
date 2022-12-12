@@ -89,3 +89,4 @@ __TODO:__
 * Fancy visualizer
 * Memory usage?
 * Timing code?
+* profiler (Time and calls amount)

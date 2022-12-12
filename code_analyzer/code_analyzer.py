@@ -654,7 +654,7 @@ class CodeAnalyzer:
                         called such as from a .record_dict_for_line_previous(...) call.
                     
                     """
-                    if _interpretable_current_by_scope:
+                    if _interpretable_current_by_scope is not None:
 
                         """
                         Notes:
@@ -1438,7 +1438,7 @@ class CodeAnalyzer:
                 length_line_with_comments_with_dict_k_variable_v_value,
             )
 
-    def record_comment_for_interpretable_next(self, comment: Union[constants.COMMENT]) -> None:
+    def record_comment_for_interpretable_next(self, comment: constants.COMMENT) -> None:
         """
         Update update_dict_k_variable_v_value for interpretable_current by appending the
         dict to a list that will then be exhausted into the next trace_call_result
@@ -1450,7 +1450,7 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_NEXT)
 
-    def record_comment_for_interpretable_previous(self, comment: Union[constants.COMMENT]) -> None:
+    def record_comment_for_interpretable_previous(self, comment: constants.COMMENT) -> None:
         """
         Update update_dict_k_variable_v_value for trace_call_result_previous
 
@@ -1462,7 +1462,7 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.RECORD_COMMENT_FOR_INTERPRETABLE_PREVIOUS)
 
-    def hide_interpretable_previous(self, amount: Union[int] = 1):
+    def hide_interpretable_previous(self, amount: int= 1):
         """
         Will hide the previous interpretable from being seen when being printed to the terminal
         or exported to a file. Think of this function as hiding the previous interpreted line of code
@@ -1477,7 +1477,7 @@ class CodeAnalyzer:
 
         self._list_procedure.append(CodeAnalyzer._Procedure.HIDE_LINE_PREVIOUS)
 
-    def hide_interpretable_next(self, amount: Union[int] = 1):
+    def hide_interpretable_next(self, amount: int = 1):
         """
         Will hide the next interpretable from being seen when being printed to the terminal
         or exported to a file. Think of this function as hiding the previous interpreted line of code

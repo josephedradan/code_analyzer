@@ -30,6 +30,8 @@ temp = 23123123131231
 
 # Comment that will be displayed on the next line
 code_analyzer.record_comment_for_interpretable_next("Class definition")
+
+
 def fff():
     class X:
 
@@ -39,12 +41,10 @@ def fff():
         def __str__(self):
             return 'fdf'
 
-
     var_a = 2
     var_b = 3
 
     star = 123123123123
-
 
     def adder(temp_var):
         """
@@ -72,9 +72,9 @@ def fff():
 
         return inner() + q
 
-
     var_c = out()
     print(var_c)
+
 
 fff()
 

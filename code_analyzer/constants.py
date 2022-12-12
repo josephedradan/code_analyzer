@@ -26,7 +26,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Union, Dict, Any
 
-COMMENT = Union[Any]
+COMMENT = Any
 
 
 class EnumSimple(Enum):
