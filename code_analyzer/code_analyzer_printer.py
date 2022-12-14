@@ -32,18 +32,17 @@ import os
 import sys
 from typing import List, Union, Callable, Literal, Generator, Any, Dict
 
+import code_analyzer as _code_analyzer
 import colorama
 import pandas as pd
-from rich.console import Console
-from rich.syntax import Syntax
-from rich.table import Table
-from rich.text import Text
-
-import code_analyzer as _code_analyzer
 from code_analyzer import constants
 from code_analyzer.container_comment import ContainerComment
 from code_analyzer.interpretable import Interpretable
 from code_analyzer.trace_call_result import TraceCallResult
+from rich.console import Console
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
 
 colorama.init()
 
@@ -462,11 +461,11 @@ class CodeAnalyzerPrinter:
                 if style == Style.COLORAMA:
 
                     if attribute == Attribute.FILENAME_FULL:
-                        key = colorama.Fore.MAGENTA + key + colorama.Style.RESET_ALL
+                        key = "{}{}{}".format(colorama.Fore.MAGENTA, key, colorama.Style.RESET_ALL)
 
                     elif attribute == Attribute.CODE:
                         key = colorama.Fore.GREEN + key + colorama.Style.RESET_ALL
-                        value = colorama.Fore.RED + value + colorama.Style.RESET_ALL
+                        value = "{}{}{}".format(colorama.Fore.RED, key, colorama.Style.RESET_ALL)
                     elif attribute == Attribute.LINE_NUMBER:
                         pass
 
@@ -673,7 +672,7 @@ class CodeAnalyzerPrinter:
                 #     text_dict_k_variable_v_value
                 # )
 
-                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS]= Text(
+                dict_k_attribute_v_data__filtered[Attribute.DICT_K_VARIABLE_V_VALUE__FRAME_F_LOCALS] = Text(
                     _str_dict_k_variable_v_value,
                     # style="rgb(255,0,0)",  # Red
                     style="dark_orange",  # rgb(215,95,0)
@@ -1006,8 +1005,8 @@ def _get_str_code_styled(trace_call_result: TraceCallResult, style: STYLES = Non
 
     if style == Style.COLORAMA and line:
 
-        color_fore: Union[str, colorama.Fore] = ""
-        color_back: Union[str, colorama.Back] = ""
+        color_fore: Union[str, colorama.ansi.AnsiFore] = ""
+        color_back: Union[str, colorama.ansi.AnsiBack] = ""
 
         # Function definition
         if (trace_call_result.get_python_keyword() == constants.Keyword.DEF and
@@ -1029,6 +1028,6 @@ def _get_str_code_styled(trace_call_result: TraceCallResult, style: STYLES = Non
         elif trace_call_result.get_event() == constants.Event.CALL:
             color_fore = colorama.Fore.GREEN
 
-        return color_fore + color_back + line + colorama.Style.RESET_ALL
+        return "{}{}{}{}".format(color_fore, color_back, line, colorama.Style.RESET_ALL)
 
     return line
