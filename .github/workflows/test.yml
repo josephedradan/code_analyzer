@@ -1,19 +1,17 @@
 name: Tests
 
-#on:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
-#
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        os:
+        platform:
           - ubuntu-latest
           - windows-latest
         python-version: [ '3.7', '3.8', '3.9', '3.10', '3.11' ]
