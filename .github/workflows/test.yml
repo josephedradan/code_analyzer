@@ -5,12 +5,12 @@ name: Tests
 #    branches:
 #      - main
 #  pull_request:
-
+#
 on: push
 
 jobs:
   test:
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
