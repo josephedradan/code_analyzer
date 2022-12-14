@@ -384,12 +384,7 @@ def test_code_analyzer_with_deep():
 
     code_analyzer.print()
 
-    print("@@@"*10)
-    for i in code_analyzer.list_interpretable:
-        print(i)
-
     assert len(code_analyzer.list_interpretable) == 8
-    print("@@@"*10)
 
 
 def test_code_analyzer_decorator():
