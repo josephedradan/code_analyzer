@@ -1,4 +1,8 @@
+
 # Code Analyzer
+
+[![Tests](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml/badge.svg)](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml)
+
 
 ### What is this?
 A python code analyzer that allows you to visually see how your code works after executing code.
