@@ -384,6 +384,9 @@ def test_code_analyzer_with_deep():
 
     code_analyzer.print()
 
+    for i in code_analyzer.list_interpretable:
+        print(i)
+
     assert len(code_analyzer.list_interpretable) == 8
 
 
