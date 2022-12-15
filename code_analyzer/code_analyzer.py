@@ -112,7 +112,7 @@ import sys
 from collections import defaultdict
 from enum import Enum, auto
 from functools import wraps
-from types import TracebackType, FrameType
+from types import FrameType
 from typing import Union, List, Dict, Callable, Any
 
 from code_analyzer import constants
@@ -521,28 +521,28 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################
 
-            # print("-" * 10)
-            # print("scope_current:", scope_current)
-            # print("scope_current depth:", scope_current.get_indent_depth_scope())
-            # print("scope_current.get_interpretable()", scope_current.get_interpretable())
-            # print("interpretable_current:", interpretable_current)
-            # print("frame:", frame)
-            #
-            # print("str_event:", event)
-            # print("arg", arg)
-            # print("self:", self_from_frame_locals)
-            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
-            # _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            # print("trace_call_result_new (MAY OR MAY NOT EXIST IN THE NEXT RUN):\n\t{} {} {}".format(
-            #     _trace_call_result_new.code_line_strip,
-            #     "|||",
-            #     _trace_call_result_new.str_event)
-            # )
-            # print("trace_call_result_previous:\n\t{} ||| {}".format(
-            #     trace_call_result_previous,
-            #     trace_call_result_previous.str_event if trace_call_result_previous else "")
-            # )
-            # # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
+            print("-" * 10)
+            print("scope_current:", scope_current)
+            print("scope_current depth:", scope_current.get_indent_depth_scope())
+            print("scope_current.get_interpretable()", scope_current.get_interpretable())
+            print("interpretable_current:", interpretable_current)
+            print("frame:", frame)
+
+            print("str_event:", event)
+            print("arg", arg)
+            print("self:", self_from_frame_locals)
+            print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            _trace_call_result_new = TraceCallResult(frame, event, arg, )
+            print("trace_call_result_new (MAY OR MAY NOT EXIST IN THE NEXT RUN):\n\t{} {} {}".format(
+                _trace_call_result_new.code_line_strip,
+                "|||",
+                _trace_call_result_new.str_event)
+            )
+            print("trace_call_result_previous:\n\t{} ||| {}".format(
+                trace_call_result_previous,
+                trace_call_result_previous.str_event if trace_call_result_previous else "")
+            )
+            # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
             # print("frame.f_code.co_varnames", frame.f_code.co_varnames)  # Current scope variables
             # print("frame.f_code.co_cellvars", frame.f_code.co_cellvars)  # Current scope, Outer scope variables
             # print("frame.f_code.co_freevars", frame.f_code.co_freevars)  # ?
@@ -1155,10 +1155,9 @@ class CodeAnalyzer:
                             # 3A1. IF NONE LOOK AT THE PARENT SCOPE FOR THE INTERPRETABLE
                             if _interpretable_top is None:
                                 _scope_parent = scope_current.get_scope_parent()
-                                
+
                                 if _scope_parent is None:
                                     raise Exception("_scope_parent is None")
-
 
                                 # This interpretable should be the top interpretable of the previous scope
                                 _interpretable_top = _scope_parent.get_interpretable_top()  # Unlikely to be None
@@ -1240,7 +1239,7 @@ class CodeAnalyzer:
 
                             if _trace_call_result_primary is None:
                                 raise Exception("_trace_call_result_primary is None")
-                            
+
                             # 3A1. Top Interpretable's primary TraceCallResult has Event == CALL
                             if _trace_call_result_primary.get_event() == constants.Event.CALL:
                                 """
@@ -1328,7 +1327,7 @@ class CodeAnalyzer:
         """
 
         if self._running:  # This guard prevents potential exceptions and bugs from occurring
-            
+
             if self._index_frame_object is None:
                 raise Exception("self._index_frame_object is None")
 
@@ -1367,25 +1366,27 @@ class CodeAnalyzer:
                 indent_depth_scope = self._list_stack_scope[-1].get_indent_depth_scope()  # TODO: DO CRASH PROTECTION
                 """
                 Possible Conditions:
-                    1. When self._index_frame_object == 1, a .stop() call will be the last
-                    interpretable which needs to be removed because it is not related to code being analyzed
+                    1. When self._decorator_used is False and self._index_frame_object == 1
+                    The normal way of using .start() and .stop() was used which means the last
+                    interpretable should be a .stop() call as a line and must be popped.
                     
-                    2. When self._index_frame_object == 2, nothing happens because it doesn't have the same
-                    problems when self._index_frame_object == 1
+                    2. When self._index_frame_object == 2
+                    The "with" style of calling this object was used
                     
-                    3. When indent_depth_scope > 0, a deeper level .stop() call was called and that .stop()
-                    interpretable must be removed
+                    2a. sys.version_info.minor > 8 and self._index_frame_object == 2
+                    Python versions past minor version 3.9 adds an additional Interpretable for the "with"
+                    statement which needs to be removed
                     
-                    4. When self._decorator_used is False and self._index_frame_object == 1
-                    the decorator method of running this code was used so the .stop() is on a higher or equal scope 
-                    depth relative to the .start() call. However due to the decorator forcing all the code being a
-                    analyzed to be in a 1 level deeper scope depth, a return line will be added and will need to
-                    be removed.
+                    3. When indent_depth_scope > 0 
+                    A deeper level .stop() call was called and that .stop() interpretable must be removed
+                
                     
                 """
 
-                if (self._index_frame_object == 1 and not self._decorator_used) or indent_depth_scope > 0:
-
+                if ((self._index_frame_object == 1 and not self._decorator_used) or
+                        (indent_depth_scope > 0) or
+                        (sys.version_info.minor > 9 and self._index_frame_object == 2)
+                ):
                     # Remove the top interpretable from the last scope
                     _interpretable_top_popped = self.list_interpretable.pop()
 
@@ -1403,11 +1404,16 @@ class CodeAnalyzer:
 
                     self._decorator_used = False
 
+                # Final logic to exhaust any remaining self._list_comment_for_trace_call_result_next
                 if self.list_interpretable:  # Might be empty
                     """
                     If self._list_comment_for_trace_call_result_next has any
-                    dict_k_variable_v_values left over, those dict_k_variable_v_values must added to the
-                    top interpretable
+                    comment left over, those comments must added to the
+                    top interpretable.
+                    
+                    Basically, if there are any remaining comment type objects in
+                    self._list_comment_for_trace_call_result_next, add them into the last interpretable
+                    
                     """
                     _interpretable_top: Interpretable = self.list_interpretable[-1]
                     _interpretable_top.get_container_comment().add_by_exhausting(

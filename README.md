@@ -16,7 +16,7 @@ It is not advised to use this analyzer in a big project as the output won't fit 
 method call to see the code in a file might be more useful/helpful.
 
 ### Requirements:
-    python>=3.6
+    python>=3.7
     rich
     colorama
     pandas

@@ -23,6 +23,7 @@ Tags:
 Reference:
 
 """
+from contextlib import contextmanager
 from typing import Union
 
 import pytest
@@ -291,7 +292,40 @@ def test_code_analyzer_with():
 
     ca.print()
 
+    for i in ca.list_interpretable:
+        print(i)
+
     assert len(code_analyzer.list_interpretable) == 8
+
+    # @contextmanager
+    # def aaaa():
+    #     try:
+    #         yield 23
+    #     finally:
+    #         pass
+    #
+    #
+    # code_analyzer = CodeAnalyzer()
+    # code_analyzer.start()
+    #
+    # # x = 3412312
+    # # y = 32
+    # # z = x + y
+    #
+    # with aaaa() as f:
+    #     # print(f)
+    #     x = f + 2
+    #
+    # f
+    # a = 32
+    # z = 424
+    #
+    # code_analyzer.stop()
+    # code_analyzer.print()
+    #
+    # for i in code_analyzer.list_interpretable:
+    #     print(i)
+
 
 
 def test_code_analyzer_with_stop_inner():

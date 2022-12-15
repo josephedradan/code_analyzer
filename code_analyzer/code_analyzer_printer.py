@@ -30,7 +30,7 @@ from __future__ import annotations
 import enum
 import os
 import sys
-from typing import List, Union, Callable, Literal, Generator, Any, Dict
+from typing import List, Union, Callable, Generator, Any, Dict
 
 import code_analyzer as _code_analyzer
 import colorama
@@ -288,7 +288,7 @@ class Style(enum.Enum):
         return self.value == other
 
 
-STYLES = Literal[Style.COLORAMA, Style.RICH, None]
+STYLES = Union[Style, None]
 
 
 class CodeAnalyzerPrinter:
