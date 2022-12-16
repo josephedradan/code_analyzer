@@ -32,17 +32,18 @@ import os
 import sys
 from typing import List, Union, Callable, Generator, Any, Dict
 
-import code_analyzer as _code_analyzer
 import colorama
 import pandas as pd
-from code_analyzer import constants
-from code_analyzer.container_comment import ContainerComment
-from code_analyzer.interpretable import Interpretable
-from code_analyzer.trace_call_result import TraceCallResult
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+
+import code_analyzer as _code_analyzer
+from code_analyzer import constants
+from code_analyzer.container_comment import ContainerComment
+from code_analyzer.interpretable import Interpretable
+from code_analyzer.trace_call_result import TraceCallResult
 
 colorama.init()
 

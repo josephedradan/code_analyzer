@@ -1,7 +1,9 @@
 
 # Code Analyzer
 
-[![Tests](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml/badge.svg)](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-code-analyzer)
+[![PyPI version](https://badge.fury.io/py/python-code-analyzer.svg)](https://badge.fury.io/py/python-code-analyzer)
+[![tests](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml/badge.svg)](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml)
 
 
 ### What is this?
@@ -58,6 +60,7 @@ method call to see the code in a file might be more useful/helpful.
 
 
 ### Output
+
 ![example_recursive.png](https://raw.githubusercontent.com/josephedradan/code_analyzer/main/images/example_recursive.png)
 
 ## [Rich output html](https://htmlpreview.github.io/?https://github.com/josephedradan/code_analyzer/blob/main/examples/example_recursive_code_analysis_rich.html)
@@ -88,6 +91,8 @@ IMPORT BELOW TO THE TOP OF THE FILE TO POSSIBLY REMOVE IT__
 
 ### Installation
     pip install python-code-analyzer
+
+### [pypi](https://pypi.org/project/python-code-analyzer/)
 
 __TODO:__
 * Fancy visualizer

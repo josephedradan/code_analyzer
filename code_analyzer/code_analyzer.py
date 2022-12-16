@@ -521,27 +521,27 @@ class CodeAnalyzer:
             # DEBUGGING HEAD START
             ####################
 
-            print("-" * 10)
-            print("scope_current:", scope_current)
-            print("scope_current depth:", scope_current.get_indent_depth_scope())
-            print("scope_current.get_interpretable()", scope_current.get_interpretable())
-            print("interpretable_current:", interpretable_current)
-            print("frame:", frame)
-
-            print("str_event:", event)
-            print("arg", arg)
-            print("self:", self_from_frame_locals)
-            print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
-            _trace_call_result_new = TraceCallResult(frame, event, arg, )
-            print("trace_call_result_new (MAY OR MAY NOT EXIST IN THE NEXT RUN):\n\t{} {} {}".format(
-                _trace_call_result_new.code_line_strip,
-                "|||",
-                _trace_call_result_new.str_event)
-            )
-            print("trace_call_result_previous:\n\t{} ||| {}".format(
-                trace_call_result_previous,
-                trace_call_result_previous.str_event if trace_call_result_previous else "")
-            )
+            # print("-" * 10)
+            # print("scope_current:", scope_current)
+            # print("scope_current depth:", scope_current.get_indent_depth_scope())
+            # print("scope_current.get_interpretable()", scope_current.get_interpretable())
+            # print("interpretable_current:", interpretable_current)
+            # print("frame:", frame)
+            #
+            # print("str_event:", event)
+            # print("arg", arg)
+            # print("self:", self_from_frame_locals)
+            # print("self.__depth_scope_count_self:", self.__depth_scope_count_self)
+            # _trace_call_result_new = TraceCallResult(frame, event, arg, )
+            # print("trace_call_result_new (MAY OR MAY NOT EXIST IN THE NEXT RUN):\n\t{} {} {}".format(
+            #     _trace_call_result_new.code_line_strip,
+            #     "|||",
+            #     _trace_call_result_new.str_event)
+            # )
+            # print("trace_call_result_previous:\n\t{} ||| {}".format(
+            #     trace_call_result_previous,
+            #     trace_call_result_previous.str_event if trace_call_result_previous else "")
+            # )
             # print("frame.f_code.co_name", frame.f_code.co_name)  # Current scope callable name
             # print("frame.f_code.co_varnames", frame.f_code.co_varnames)  # Current scope variables
             # print("frame.f_code.co_cellvars", frame.f_code.co_cellvars)  # Current scope, Outer scope variables

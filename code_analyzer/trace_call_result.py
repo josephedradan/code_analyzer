@@ -200,11 +200,10 @@ class TraceCallResult:
         # DEBUGGING END
         ####################
 
-
         indent_depth_corrected = 0
-        
+
         if self.interpretable:
-            indent_depth_corrected = self.interpretable.scope_parent.get_indent_depth_corrected() 
+            indent_depth_corrected = self.interpretable.scope_parent.get_indent_depth_corrected()
 
         """
         Math
@@ -389,7 +388,7 @@ class TraceCallResult:
 
         if self.interpretable is None:
             raise Exception("self.interpretable is None")
-                            
+
         set_variable_exclusion = self.interpretable.get_scope_parent().get_set_variable_exclusion()
 
         dict_temp = {
@@ -425,7 +424,7 @@ class TraceCallResult:
         """
         if self.interpretable is None:
             raise Exception("self.interpretable is None")
-        
+
         interpretable_previous_by_scope = self.interpretable.get_interpretable_previous_by_scope()
 
         if use_filtered_by_set_variable_exclusion:
@@ -442,7 +441,7 @@ class TraceCallResult:
 
         if interpretable_previous_by_scope is None:
             raise Exception("interpretable_previous_by_scope is None")
-        
+
         trace_call_result_interpretable_previous: TraceCallResult = (
             interpretable_previous_by_scope.get_trace_call_result_primary()
         )

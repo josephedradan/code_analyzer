@@ -24,7 +24,7 @@ Reference:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Union, Dict, Any
+from typing import Any
 
 COMMENT = Any
 
