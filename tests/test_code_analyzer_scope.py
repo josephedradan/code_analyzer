@@ -169,4 +169,3 @@ def test_code_analyzer_scope_recursive_complex():
     assert _list_interpretable[0].get_trace_call_result_primary().get_indent_depth_corrected() == 0
 
     assert _list_interpretable[-1].get_trace_call_result_primary().get_indent_depth_corrected() == 16
-

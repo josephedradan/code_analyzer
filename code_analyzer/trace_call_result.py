@@ -221,7 +221,7 @@ class TraceCallResult:
 
         return result
 
-    def get_indent_depth_relative(self):
+    def get_indent_depth_relative(self) -> int:
         """
         Indent depth of the original code of the first Interpretable in the scope -
         Indent depth of the original code of this Interpretable (which is also in the same scope)
@@ -232,6 +232,9 @@ class TraceCallResult:
 
         :return:
         """
+        if self.interpretable is None:
+            raise Exception("self.interpretable is None")
+
         return self.interpretable.scope_parent.get_indent_depth_relative_to_scope(self)
 
     def get_code_line_number(self) -> int:
@@ -407,7 +410,7 @@ class TraceCallResult:
         """
         return self.get_frame_f_locals_filtered(use_filtered_by_set_variable_exclusion=True)
 
-    def get_frame_f_locals_filtered(self, use_filtered_by_set_variable_exclusion: bool = False):
+    def get_frame_f_locals_filtered(self, use_filtered_by_set_variable_exclusion: bool = False) -> dict:
         """
 
         Notes:

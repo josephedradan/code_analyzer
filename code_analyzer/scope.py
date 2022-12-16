@@ -83,7 +83,7 @@ class Scope:
 
     @staticmethod
     def _get_indent_depth_relative(trace_call_result_primary: trace_call_result.TraceCallResult,
-                                   trace_call_result_secondary: trace_call_result.TraceCallResult):
+                                   trace_call_result_secondary: trace_call_result.TraceCallResult) -> int:
         """
         Helper function for get_indent_level_relative_to_scope
 
@@ -97,7 +97,7 @@ class Scope:
                 trace_call_result_primary.get_indent_depth_by_code_execution()
         )
 
-    def get_indent_depth_relative_to_scope(self, trace_call_result_given: trace_call_result.TraceCallResult):
+    def get_indent_depth_relative_to_scope(self, trace_call_result_given: trace_call_result.TraceCallResult) -> int:
         """
         Get the corrected indent level for the given TraceCallResult
 

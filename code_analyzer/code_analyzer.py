@@ -1442,7 +1442,8 @@ class CodeAnalyzer:
         for index, interpretable in enumerate(self.list_interpretable):
             self.dict_k_interpretable_v_list_interpretable[interpretable].append(interpretable)
 
-            list_interpretable = self.dict_k_interpretable_v_list_interpretable.get(interpretable)
+            # To prevent mypy from complaining about incompatible types, an empty list is the second argument of .get()
+            list_interpretable = self.dict_k_interpretable_v_list_interpretable.get(interpretable, [])
 
             execution_number_relative = len(list_interpretable)
 
