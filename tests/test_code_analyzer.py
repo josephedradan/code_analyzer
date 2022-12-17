@@ -27,6 +27,7 @@ from contextlib import contextmanager
 from typing import Union
 
 import pytest
+
 from code_analyzer import CodeAnalyzer
 from code_analyzer.code_analyzer import NoScopeAvailable
 
@@ -297,34 +298,37 @@ def test_code_analyzer_with():
 
     assert len(code_analyzer.list_interpretable) == 8
 
-    # @contextmanager
-    # def aaaa():
-    #     try:
-    #         yield 23
-    #     finally:
-    #         pass
-    #
-    #
-    # code_analyzer = CodeAnalyzer()
-    # code_analyzer.start()
-    #
-    # # x = 3412312
-    # # y = 32
-    # # z = x + y
-    #
-    # with aaaa() as f:
-    #     # print(f)
-    #     x = f + 2
-    #
-    # f
-    # a = 32
-    # z = 424
-    #
-    # code_analyzer.stop()
-    # code_analyzer.print()
-    #
-    # for i in code_analyzer.list_interpretable:
-    #     print(i)
+
+def test_code_analyzer_on_context_manager():
+    """
+    Test how the code analyzer works when dealing wit ha contextmanager
+
+    :return:
+    """
+    @contextmanager
+    def aaaa():
+        try:
+            yield 23
+        finally:
+            pass
+
+    code_analyzer = CodeAnalyzer()
+    code_analyzer.start()
+
+    x = 3412312
+    y = 32
+    z = x + y
+
+    with aaaa() as f:
+        # print(f)
+        x = f + 2
+
+    f
+    a = 32
+    z = 424
+
+    code_analyzer.stop()
+    code_analyzer.print()
 
 
 
@@ -543,6 +547,7 @@ def test_code_analyzer_hide_line_next():
     assert _list_interpretable[11].get_visibility() is True
     assert _list_interpretable[12].get_visibility() is True
 
+
 def test_code_analyzer_hide_line_next_dealing_with_conflicting_method_calls():
     """
     Test if .hide_line_next works when there are more CodeAnalyzer object .hide_line_next method calls
@@ -569,6 +574,7 @@ def test_code_analyzer_hide_line_next_dealing_with_conflicting_method_calls():
     assert _list_interpretable[1].get_visibility() is False
     assert _list_interpretable[2].get_visibility() is False
     assert _list_interpretable[3].get_visibility() is True
+
 
 def test_code_analyzer_hide_line_next_dealing_with_more_method_calls():
     """

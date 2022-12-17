@@ -4,7 +4,8 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-code-analyzer)
 [![PyPI version](https://badge.fury.io/py/python-code-analyzer.svg)](https://badge.fury.io/py/python-code-analyzer)
 [![tests](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml/badge.svg)](https://github.com/josephedradan/code_analyzer/actions/workflows/test.yml)
-
+![PyPI - Status](https://img.shields.io/pypi/status/python-code-analyzer)
+![PyPI - License](https://img.shields.io/pypi/l/python-code-analyzer)
 
 ### What is this?
 A python code analyzer that allows you to visually see how your code works after executing code.

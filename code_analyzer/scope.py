@@ -174,10 +174,7 @@ class Scope:
         if index is None:
             return self.get_interpretable_top()
 
-        try:
-            return self.list_interpretable[index]
-        except IndexError as e:
-            return None
+        return self.list_interpretable[index]
 
     def update_set_variable_exclusion(self, iterable_: Iterable):
         """
