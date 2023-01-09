@@ -470,8 +470,12 @@ def get_dict_difference_special(dict_primary: dict, dict_secondary: dict) -> dic
 
     Notes:
         Get the difference between the primary and secondary dict where the keys of the primary dict
-        are filtered by the secondary dict. Basically the keys of the primary dict are checked to see if they
-        are in the secondary dict.
+        are filtered by the secondary dict.
+        Basically the keys of the primary dict are checked against the secondary dict,
+        if the key is not in the secondary dict then add the key value pair of the primary dict to the difference dict
+        or
+        if the key is in the secondary dict but it's value is not equal to the value of the primary dict using the
+        same key then add the key value pair of the primary dict to the difference dict.
 
     :param dict_primary:
     :param dict_secondary:
@@ -505,7 +509,16 @@ def get_dict_difference_special(dict_primary: dict, dict_secondary: dict) -> dic
     dict_difference = {}
 
     for k, v in dict_primary.items():
-        if k not in dict_secondary or (k in dict_secondary is True and dict_primary[k] != dict_secondary[k]):
+
+        """
+        if k is not in dict_secondary
+            Add k and v of dict_primary to dict_difference
+        else
+            if k is in dict_secondary and dict_secondary[k] is different from dict_primary[k]
+                Add k and v of dict_primary to dict_difference
+        
+        """
+        if k not in dict_secondary or (k in dict_secondary and dict_primary[k] != dict_secondary.get(k)):
             dict_difference[k] = v
 
     return dict_difference
