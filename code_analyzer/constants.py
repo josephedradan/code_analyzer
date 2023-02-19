@@ -1,7 +1,4 @@
 """
-Created by Joseph Edradan
-Github: https://github.com/josephedradan
-
 Date created: 6/23/2022
 
 Purpose:
@@ -17,6 +14,9 @@ IMPORTANT NOTES:
 Explanation:
 
 Tags:
+
+Contributors:
+    https://github.com/josephedradan
 
 Reference:
 
@@ -92,12 +92,18 @@ class Event(InterpretableType):
     Notes:
         Add more events when the Python version updates
 
-    Reference:
+    Contributors:
+    https://github.com/josephedradan
+
+Reference:
         sys.settrace(tracefunc)
             Notes:
                 "Trace functions should have three arguments: frame, str_event, and arg. frame is the current stack frame.
                 str_event is a string: 'call', 'line', 'return', 'exception' or 'opcode'. arg depends on the str_event type."
-            Reference:
+            Contributors:
+    https://github.com/josephedradan
+
+Reference:
                 https://docs.python.org/3/library/sys.html#sys.settrace
     """
     RETURN = 'return'  # tracefunc str_event

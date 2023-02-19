@@ -1,7 +1,4 @@
 """
-Created by Joseph Edradan
-Github: https://github.com/josephedradan
-
 Date created: 6/7/2022
 
 Purpose:
@@ -32,11 +29,17 @@ Explanation:
 
 Tags:
 
+Contributors:
+    https://github.com/josephedradan
+
 Reference:
     How to patch Python bytecode
         Notes:
             Code object stuff, but primarily on the bytecode
-        Reference:
+        Contributors:
+    https://github.com/josephedradan
+
+Reference:
             https://rushter.com/blog/python-bytecode-patch/
 """
 from __future__ import annotations

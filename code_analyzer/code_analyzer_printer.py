@@ -1,7 +1,4 @@
 """
-Created by Joseph Edradan
-Github: https://github.com/josephedradan
-
 Date created: 11/6/2022
 
 Purpose:
@@ -17,6 +14,9 @@ IMPORTANT NOTES:
 Explanation:
 
 Tags:
+
+Contributors:
+    https://github.com/josephedradan
 
 Reference:
 
@@ -174,11 +174,17 @@ def get_str_dict_interpretable_data(dict_interpretable_data: DICT_K_ATTRIBUTE_V_
 
     References:
         Are dictionaries ordered in Python 3.6+?
-            Reference:
+            Contributors:
+    https://github.com/josephedradan
+
+Reference:
                 https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
 
         Converting dict to OrderedDict
-            Reference:
+            Contributors:
+    https://github.com/josephedradan
+
+Reference:
                 https://stackoverflow.com/questions/15711755/converting-dict-to-ordereddict
 
         class typing.OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
@@ -190,7 +196,10 @@ def get_str_dict_interpretable_data(dict_interpretable_data: DICT_K_ATTRIBUTE_V_
                 dicts before python==3.6 are unordered, OrderedDict is supported in python versions lower than 3.6,
                 Type hinting for OrderedDict is supported in 3.7.2. Therefore I will not support python<=3.6
 
-            Reference:
+            Contributors:
+    https://github.com/josephedradan
+
+Reference:
                 https://docs.python.org/3/library/typing.html#typing.OrderedDict
 
 

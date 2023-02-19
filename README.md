@@ -100,3 +100,4 @@ __TODO:__
 * Memory usage?
 * Timing code?
 * profiler (Time and calls amount)
+* dis.show_code

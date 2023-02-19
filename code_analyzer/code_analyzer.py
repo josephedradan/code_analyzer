@@ -1,7 +1,4 @@
 """
-Created by Joseph Edradan
-Github: https://github.com/josephedradan
-
 Date created: 5/21/2022
 
 Purpose:
@@ -34,7 +31,10 @@ Notes:
                 arg:
                     depends on the str_event type
 
-        Reference:
+        Contributors:
+    https://github.com/josephedradan
+
+Reference:
             https://docs.python.org/3/library/sys.html
 
 IMPORTANT NOTES:
@@ -44,19 +44,28 @@ Explanation:
 
 Tags:
 
+Contributors:
+    https://github.com/josephedradan
+
 Reference:
     What cool hacks can be done using sys.settrace?
         Notes:
             Old stuff about settrace.
             Callgraph uses this
                 https://pycallgraph.readthedocs.io/en/master/
-        Reference:
+        Contributors:
+    https://github.com/josephedradan
+
+Reference:
             https://stackoverflow.com/questions/1692866/what-cool-hacks-can-be-done-using-sys-settrace
 
     So You Wanna Be a Pandas Expert? (Tutorial) - James Powell | PyData Global 2021
         Notes:
             What my code is based on
-        Reference:
+        Contributors:
+    https://github.com/josephedradan
+
+Reference:
             https://youtu.be/pjq3QOxl9Ok?t=2720
 
     The unreasonable effectiveness of sys.settrace (and sys.setprofile)
@@ -104,7 +113,10 @@ Reference:
                         0x08: uses **keywords
                         0x20: generator
                         0x2000: from future import division
-        Reference:
+        Contributors:
+    https://github.com/josephedradan
+
+Reference:
             https://explog.in/notes/settrace.html
 
 """

@@ -1,7 +1,4 @@
 """
-Created by Joseph Edradan
-Github: https://github.com/josephedradan
-
 Date created: 9/27/2022
 
 Purpose:
@@ -19,6 +16,9 @@ IMPORTANT NOTES:
 Explanation:
 
 Tags:
+
+Contributors:
+    https://github.com/josephedradan
 
 Reference:
 
