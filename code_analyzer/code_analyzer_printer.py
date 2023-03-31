@@ -30,7 +30,12 @@ from __future__ import annotations
 import enum
 import os
 import sys
-from typing import List, Union, Callable, Generator, Any, Dict
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Generator
+from typing import List
+from typing import Union
 
 import colorama
 import pandas as pd
@@ -802,11 +807,12 @@ class CodeAnalyzerPrinter:
         console.print(Text(STR_LINE_OF_CODE_ANALYSIS_HEADER, style=RICH_TABLE_STYLE))
 
         # WARNING: Suboptimal since this calculation was made before
-        __width_additional = len("".join({
-                                             attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
-                                                 attribute_name].name
-                                             for attribute_name in self._get_list_attribute_allowed_execution_analysis()
-                                         }.values()))
+        __width_additional = len("".join(
+            {attribute_name: DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[
+                attribute_name].name
+             for attribute_name in self._get_list_attribute_allowed_execution_analysis()
+             }.values()
+        ))
 
         for interpretable, list_interpretable in self.code_analyzer.dict_k_interpretable_v_list_interpretable.items():
             table_shared = Table(

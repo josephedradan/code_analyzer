@@ -455,13 +455,13 @@ class CodeAnalyzer:
 
         def trace_function_callback(frame: FrameType, event: str, arg: Any):
             """
-                Custom trace function
+            Custom trace function
 
-                :param frame:
-                :param event:
-                :param arg:
-                :return:
-                """
+            :param frame:
+            :param event:
+            :param arg:
+            :return:
+            """
 
             nonlocal self
 

@@ -19,10 +19,7 @@ It is not advised to use this analyzer in a big project as the output won't fit 
 method call to see the code in a file might be more useful/helpful.
 
 ### Requirements:
-    python>=3.7
-    rich
-    colorama
-    pandas
+https://github.com/josephedradan/code_analyzer/blob/e2492649865b50f51d970be3c6d06d433d03596e/requirements.txt#L1-L4
 
 ### Example:
 
