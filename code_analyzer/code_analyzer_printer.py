@@ -891,6 +891,7 @@ class CodeAnalyzerPrinter:
                 ),
             )
 
+            # Making the columns
             for attribute in self._get_list_attribute_allowed_line_of_code_analysis():
                 table_body.add_column(
                     DICT_K_ATTRIBUTE_V_MAPPING_CONTAINER_ATTRIBUTE[attribute].name,
@@ -898,6 +899,7 @@ class CodeAnalyzerPrinter:
                     style=RICH_TABLE_STYLE,
                 )
 
+            # Making the rows
             for interpretable_inner in list_interpretable:
                 data_intermediate_interpretable = DataIntermediateInterpretable(interpretable_inner)
 

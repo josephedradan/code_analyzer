@@ -65,4 +65,8 @@ __TODO:__
 * Memory usage?
 * Timing code?
 * profiler (Time and calls amount)
-* dis.show_code
+* dis.show_code 
+* 03/04/2025 			
+
+        Project similar to Python Code Analyzer https://pythontutor.com/ use this as reference as you make yours
+			
